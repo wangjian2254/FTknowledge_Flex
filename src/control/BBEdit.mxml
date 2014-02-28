@@ -183,12 +183,14 @@
 			private function saveBBResult(result:Object,e:ResultEvent):void{
 				if(result.success){
 					bbId.text = result.result;
+					bbDel.enabled=true;
 					refreshTaxKind();
 				}
 			}
 			private function saveBBFieldResult(result:Object,e:ResultEvent):void{
 				if(result.success){
 					bbFieldId.text = result.result;
+					bbFieldDel.enabled=true;
 					refreshTaxKind();
 				}
 			}

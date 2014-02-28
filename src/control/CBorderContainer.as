@@ -31,6 +31,9 @@ package control
 		[Bindable]
 		[Embed("assets/img/refresh.png")]
 		public  static var refreshimg:Class;
+		[Bindable]
+		[Embed("assets/img/wx.png")]
+		public  static var wximg:Class;
 		
 		public function CBorderContainer()
 		{

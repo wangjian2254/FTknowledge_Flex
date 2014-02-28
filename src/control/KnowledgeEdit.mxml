@@ -21,53 +21,31 @@
 			import mx.rpc.events.FaultEvent;
 			import mx.rpc.events.ResultEvent;
 			
+			import uicontrol.BBItemEdit;
+			
 			import util.ToolUtil;
 			
 			[Bindable]
 			private var list:ArrayCollection=new ArrayCollection();
+			private var bbitemlist:ArrayCollection=new ArrayCollection();
 			
 			override public   function  init(e:FlexEvent):void{
-//				loadData();
-				list=ToolUtil.areaList;
+				refreshTaxKind();
+				for each(var item:Object in ToolUtil.bbList){
+					var bbitem:BBItemEdit=new BBItemEdit();
+					bbitem.bbid = item.id;
+					bbitem.bbname = item.name;
+					bbitem.headArray = new ArrayCollection(item.children as Array);
+					
+					bb.addElement(bbitem);
+					bbitemlist.addItem(bbitem);
+				}
 			}
 			override public function closeContainer(e:CloseEvent):void{
 				dispatchEvent(e);
 				
 			}
-			public function save(e:Event):void{
-				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("_100_BaseInfosAction_saveOrUpdateAreaPoint.action",saveDataResult,"POST");
-				var o:Object=getData();
-				if(o==null){
-					return;
-				}
-				http.send(o);
-			}
-			public function getData():Object{
-				var o:Object={};
-				o["areapointVo.areaname"]=areaname.text;
-				if(o["areapointVo.areaname"]==""){
-					Alert.show("请输入点位名称","警告");
-					return null;
-				}
-				o["areapointVo.id"]=idField.text;
-				return o;
-			}
 			
-			private function saveDataResult(result:Object,e:ResultEvent):void{
-				if(result.message.success){
-					idField.text=result.message.result.id;
-					
-					ToolUtil.areaRefresh(refresh);
-				}
-			}
-//			private function loadData():void{
-//				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResultAndFault("/htcsgl/_100_BaseInfosAction_finddeptall.action",loadDataResult,loadDataFault,"POST");
-//				http.send();
-//			}
-//			private function loadDataResult(resutl:Object,e:ResultEvent):void{
-//				
-//				
-//			}
 			private function loadDataFault(e:FaultEvent):void{
 				Alert.show('操作失败',"提示");
 			}
@@ -83,124 +61,122 @@
 			//新增，保存，删除的处理函数
 			private function clickHander(e:ItemClickEvent):void{
 				if(e.label=="新增"){
-					add();
 				}
-				if(e.label=="修改"){
-					if(peopgrid.selectedItem==null){
-						Alert.show("提示","请选择一条记录。");
-					}else{
-						show(peopgrid.selectedItem);
-					}
-				}
-				if(e.label=="删除"){
-					del();
-				}
-				if(e.label=='同步数据'){
-//					InfoUtil.userRefresh(refreshScx);
-					ToolUtil.areaRefresh(refresh);
-				}
-				//				if(e.label=='测试打开部门管理'){
-				//					var obj:Object=new Object();
-				//					obj['test']="测试";
-				//					var evt:ChangeMenuEvent=new ChangeMenuEvent(ChangeMenuEvent.ChangeMenu_EventStr,"dept",obj,true)
-				//					dispatchEvent(evt);
-				//				}
+				
 				
 			}
 			
-			public function add():void{
-				areaname.text="";
-				idField.text="";
+			
+			
+			public function showBB():void{
+				if(kindTree.selectedItem){
+					if(kindTree.selectedItem.type=="kjkm"){
+						var obj:Object=new Object();
+						obj["id"]=kindTree.selectedItem.id;
+						HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBBFieldValuebyTicketKjkm",showBBResult,"POST").send(obj)
+					}
+				}
 			}
-			public function del():void{
-				var userArr:ArrayCollection=new ArrayCollection();
-				var obj:Object;
-				var item:Object;
-				for(var i:int=list.length-1;i>=0;i--){
-					item=list.getItemAt(i);
-					if(!item.selected){
-						continue;
+			
+			public function showBBResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					for each(var element:BBItemEdit in bbitemlist){
+						element.bbvalue=result.result;
+						element.showData();
 					}
-					obj=new Object();
-					if(item.hasOwnProperty("id")){
-						obj.id=item.id;
-						userArr.addItem(obj);
-					}
-					//					obj.name=item.name;
+				}
+			}
+			
+			
+
+			
+			
+			
+			private function kindlblFun(item:Object):String{
+				var s:String ="";
+				if(item.type=="kind"){
+					s+="[分类] ";
+				}
+				if(item.type=="ticket"){
+					s+="[票据] ";
+				}
+				if(item.type=="kjkm"){
+					s+="[科目] ";
+				}
+				s+=item.name;
+				if(item.type=="kind"&&!item.is_active){
+					s+="(不可用) ";
+				}
+				return s;
+			}
+			
+			private function iconFn(item:Object):Class{
+				if(item.type=="kind"){
+					return addimg;
+				}
+				if(item.type=="ticket"){
+					return wximg;
+				}
+				if(item.type=="kjkm"){
+					return delimg;
+				}
+				return addimg;
+			}
+			
+			private function changeHy():void{
+				refreshTaxKind();
+
+			}
+			private function refreshTaxKind():void{
+				var o:Object=new Object();
+				o['groupid']=hy.selectedItem.id;
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTaxKind",refresh,"POST").send(o);
+			}
+			public function refresh(result:Object,e:ResultEvent):void{
+				if(result.success){
+					list = new ArrayCollection( result.result as Array);
 					
 				}
-				if(userArr.length>0){
-					ToolUtil.areaRefresh(refresh);
-//					HttpServiceUtil.getCHTTPServiceAndResultAndFault("/htcsgl/_100_BaseInfosAction_deletedept.action",loadDataResult,loadDataFault,"POST").send(userArr);
+				kindTree.validateNow();
+				for each(var item:Object in list){
+					kindTree.expandChildrenOf(item,true);
+					
 				}
 			}
-			
-			public function show(obj:Object):void{
-				areaname.text=obj.areaname;
-				idField.text=obj.id;
-				
-				
-			}
-			
-			
-			
-			public function refresh(result:Object,e:ResultEvent):void{
-				if(result.message.success){
-					add();
-					init(null);
-//					InfoUtil.userRefresh(refreshScx);
-				}
-			}
-			
-			
 			
 			[Bindable]
-			private var buttonArr:ArrayCollection=new ArrayCollection([{'label':'新增','ico':addimg},{'label':'修改','ico':saveimg},{'label':'同步数据','ico':refreshimg}]);
+			private var buttonArr:ArrayCollection=new ArrayCollection([{'label':'保存','ico':saveimg},{'label':'同步数据','ico':refreshimg}]);
 			
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:BorderContainer top="5" bottom="5" left="5" right="5"  borderVisible="false">
-		<s:layout>
-			<s:HorizontalLayout>
-				
-			</s:HorizontalLayout>
-		</s:layout>
-		<s:BorderContainer width="30%" height="100%" id="panel" backgroundAlpha="0"   borderVisible="false">
-				<s:layout>
-					<s:VerticalLayout verticalAlign="top">
-						
-					</s:VerticalLayout>
-				</s:layout>
+	<mx:VDividedBox top="5" bottom="5" right="5" left="5">
+		<s:BorderContainer width="100%" height="100%" id="panel" backgroundAlpha="0"   borderVisible="false">
+			<s:layout>
+				<s:VerticalLayout verticalAlign="top">
+					
+				</s:VerticalLayout>
+			</s:layout>
 			<s:BorderContainer  width="100%" height="25"  backgroundAlpha="0"  borderVisible="false">	
 				<s:layout>
-					<s:VerticalLayout verticalAlign="top" paddingLeft="25">
+					<s:HorizontalLayout verticalAlign="middle" horizontalAlign="left" paddingLeft="25">
 						
-					</s:VerticalLayout>
+					</s:HorizontalLayout>
 				</s:layout>
-				<s:Label text="点位信息"  width="100%" fontFamily="黑体" fontSize="14" height="25" verticalAlign="middle" textAlign="left" fontWeight="bold">
-				
+				<s:Label text="行业："    fontSize="14" height="25" verticalAlign="middle" textAlign="left" >
+					
 				</s:Label>
+				<mx:ComboBox id="hy" dataProvider="{ToolUtil.hyList}" labelField="name" width="100" change="changeHy()">
+					
+				</mx:ComboBox>
 			</s:BorderContainer>
-				<s:Form width="100%" id="form" >
-					<s:FormItem label="点位名称:" textAlign="right">
-						<s:TextInput id="areaname" width="200">
-							
-						</s:TextInput>
-					</s:FormItem>
-					<s:TextInput id="idField" visible="false">
-						
-					</s:TextInput>
-					<s:FormItem>
-						<s:Button label="保存" chromeColor="#faf0cc" height="30" click="save(event)">
-							
-						</s:Button>
-					</s:FormItem>
-				</s:Form>
+			<mx:Tree id="kindTree"  iconFunction="iconFn" itemClick="showBB()"   width="100%" height="100%" dataProvider="{list}" labelField="name" labelFunction="kindlblFun" >
+				
+			</mx:Tree>
 		</s:BorderContainer>
-		<s:BorderContainer id="rightContainner" width="70%" height="100%" backgroundAlpha="0"  borderVisible="false">
+		<s:BorderContainer id="rightContainner" width="100%" height="270" backgroundAlpha="0"  borderVisible="false">
 			<s:layout>
 				<s:VerticalLayout gap="5">
 					
@@ -218,37 +194,19 @@
 				</mx:ButtonBar>
 				
 			</s:BorderContainer>
-				<uicontrol:MarkAdvancedDataGrid id="peopgrid" dataProvider="{list}"  isNewAdd="false" enabled="true" editable="false" width="100%" height="100%">
-					<uicontrol:columns>
-						<mx:AdvancedDataGridColumn headerText="选择" dataField="selected"  sortable="false" width="60"  editorDataField="selected" rendererIsEditor="true" >
-							<mx:itemRenderer>
-								<fx:Component>
-									<mx:HBox horizontalAlign="center">
-										<fx:Script>
-											<![CDATA[
-												public function get selected():Boolean{
-													return cb.selected;
-												}
-												public function set selected(value:Boolean):void{
-													cb.selected=value;
-												}
-											]]>
-										</fx:Script>
-										
-										<mx:CheckBox id="cb" selected="{data.selected}" >
-											
-										</mx:CheckBox>
-									</mx:HBox>
-								</fx:Component>
-							</mx:itemRenderer>
-						</mx:AdvancedDataGridColumn>
-						<mx:AdvancedDataGridColumn headerText="点位名称" dataField="areaname">
-							
-						</mx:AdvancedDataGridColumn>
-					</uicontrol:columns>
-					
-				</uicontrol:MarkAdvancedDataGrid>
-				
+			<s:Scroller width="100%" height="100%">
+				<s:Group width="100%" height="100%">
+					<s:BorderContainer  minWidth="500" id="bb" borderVisible="false">
+						<s:layout>
+							<s:HorizontalLayout gap="1" horizontalAlign="left" verticalAlign="top">
+								
+							</s:HorizontalLayout>
+						</s:layout>
+					</s:BorderContainer>
+				</s:Group>
+			</s:Scroller>	
+			
 		</s:BorderContainer>
-	</s:BorderContainer>
+	</mx:VDividedBox>
+
 </control:CBorderContainer>

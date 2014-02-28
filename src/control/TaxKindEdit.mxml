@@ -20,13 +20,27 @@
 			import mx.events.ItemClickEvent;
 			import mx.rpc.events.FaultEvent;
 			import mx.rpc.events.ResultEvent;
+			import mx.utils.ObjectUtil;
 			
 			import util.ToolUtil;
+			[Bindable]
+			private var bz:String="左侧为关联科目;右侧为所有科目;双击单元格：完成增加、删除操作";
 			
 			[Bindable]
 			private var list:ArrayCollection=new ArrayCollection();
 			
+			
+			[Bindable]
+			private var kjkmlist:ArrayCollection=new ArrayCollection();
+			[Bindable]
+			private var tempkjkmlist:ArrayCollection=new ArrayCollection();
+			
+			
+			
 			override public   function  init(e:FlexEvent):void{
+				ticketName.enabled=false;
+				kindname.enabled=false;
+				btnSaveKJKM.enabled=false;
 				refreshTaxKind();
 			}
 			override public function closeContainer(e:CloseEvent):void{
@@ -83,6 +97,7 @@
 				ticketSave.enabled=false;
 				ticketDel.enabled=false;
 				kindSave.enabled=false;
+				btnSaveKJKM.enabled=false;
 				if(e.label=="新增财税分类根级"){
 					addRoot();
 					kindSave.enabled=true;
@@ -126,15 +141,21 @@
 					if(kindTree.selectedItem){
 						if(kindTree.selectedItem.type =="kind"){
 							addRoot();
-							kindFatherId.text = kindTree.getParentItem(kindTree.selectedItem).id;
-							fatherKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+							if(kindTree.getParentItem(kindTree.selectedItem)!=null){
+								kindFatherId.text = kindTree.getParentItem(kindTree.selectedItem).id;
+								fatherKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+							}
+							
 							kindSave.enabled=true;
 						}
 						if(kindTree.selectedItem.type =="ticket"){
 							addTicket();
 							ticketSave.enabled=true;
-							ticketKindId.text = kindTree.getParentItem(kindTree.selectedItem).id;
-							taxKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+							if(kindTree.getParentItem(kindTree.selectedItem)!=null){
+								ticketKindId.text = kindTree.getParentItem(kindTree.selectedItem).id;
+								taxKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+							}
+							
 						}
 						
 						
@@ -145,6 +166,19 @@
 
 				}
 				
+				if(e.label=='增加会计科目'){
+					if(kindTree.selectedItem&&kindTree.selectedItem.type =="ticket"){
+						kjkmlist.removeAll();
+						tempkjkmlist.removeAll();
+						btnSaveKJKM.enabled=true;
+						kjkmTicket.text = kindTree.selectedItem.name;
+						kjkmKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+						
+					}else{
+						Alert.show("请选择一个票据","提示");
+					}
+					
+				}
 				if(e.label=='同步数据'){
 					refreshTaxKind();
 				}
@@ -156,12 +190,18 @@
 				ticketSave.enabled=false;
 				ticketDel.enabled=false;
 				kindSave.enabled=false;
+				btnSaveKJKM.enabled=false;
+				if(!kindTree.selectedItem){
+					return;
+				}
 				if(kindTree.selectedItem.type =="kind"){
 					addRoot();
 					kindId.text = kindTree.selectedItem.id;
 					kindname.text= kindTree.selectedItem.name;
-					kindFatherId.text = kindTree.getParentItem(kindTree.selectedItem).id;
-					fatherKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+					if(kindTree.getParentItem(kindTree.selectedItem)!=null){
+						kindFatherId.text = kindTree.getParentItem(kindTree.selectedItem).id;
+						fatherKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+					}
 					if(!kindTree.selectedItem.is_active){
 						sfqy.selected = false;
 					}
@@ -173,8 +213,32 @@
 					ticketDel.enabled=true;
 					ticketName.text = kindTree.selectedItem.name;
 					ticketId.text = kindTree.selectedItem.id;
-					ticketKindId.text = kindTree.getParentItem(kindTree.selectedItem).id;
-					taxKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+					if(kindTree.getParentItem(kindTree.selectedItem)!=null){
+						ticketKindId.text = kindTree.getParentItem(kindTree.selectedItem).id;
+						taxKind.text = kindTree.getParentItem(kindTree.selectedItem).name;
+					}
+					
+				}
+				if(kindTree.selectedItem.type =="kjkm"){
+					btnSaveKJKM.enabled=true;
+					if(kindTree.getParentItem(kindTree.selectedItem)!=null){
+						kjkmTicket.text = kindTree.getParentItem(kindTree.selectedItem).name;
+						kjkmKind.text = kindTree.getParentItem( kindTree.getParentItem(kindTree.selectedItem)).name;
+					}
+//					tempkjkmlist
+					var o:Object = new Object();
+					o["ticketid"]=kindTree.getParentItem(kindTree.selectedItem).id;
+					HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKJKMbyTicket",getTicketKJKMResult,"POST").send(o);
+					
+					
+				}
+			}
+			
+			private function getTicketKJKMResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					kjkmlist=new ArrayCollection(result.result as Array);
+					tempkjkmlist = ObjectUtil.copy(kjkmlist) as ArrayCollection;
+					compareKjkmlist();
 				}
 			}
 			
@@ -227,6 +291,17 @@
 				
 			}
 			
+			private function saveKJKM():void{
+				var obj:Object=new Object();
+				obj["kjkm"]=kjkmName.text;
+				if(kjkmName.text==""){
+					Alert.show("会计科目不能为空","提示");
+					return;
+				}
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/saveKJKM",saveKJKMResult,"POST").send(obj);
+				
+			}
+			
 			private function saveKindResult(result:Object,e:ResultEvent):void{
 				if(result.success){
 					kindId.text = result.result;
@@ -236,8 +311,78 @@
 			private function saveTicketResult(result:Object,e:ResultEvent):void{
 				if(result.success){
 					ticketId.text = result.result;
+					ticketDel.enabled=true;
 					refreshTaxKind();
 				}
+			}
+			
+			private function saveKJKMResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					ToolUtil.kjkmRefresh();
+				}
+			}
+			
+			private function saveKJKMTicket():void{
+				if(!kindTree.selectedItem||kindTree.selectedItem.type =="kind"){
+					Alert.show("请选择一个票据","提示");
+					return;
+				}
+				var o:Object = new Object();
+				if(kindTree.selectedItem.type=="ticket"){
+					o["ticketid"]=kindTree.selectedItem.id;
+				}
+				if(kindTree.getParentItem(kindTree.selectedItem).type=="ticket"){
+					o["ticketid"]=kindTree.getParentItem(kindTree.selectedItem).id;
+				}
+				var s:String="";
+				for each(var item:Object in kjkmlist){
+					s+=item.id;
+					s+=",";
+				}
+				o["kjkms"]=s;
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/saveKJKMByTicket",saveKJKMTicketResult,"POST").send(o);
+				
+			}
+			
+			private function saveKJKMTicketResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					refreshTaxKind();
+				}
+			}
+			
+			private function compareKjkmlist():void{
+				if(tempkjkmlist.length!=kjkmlist.length){
+					lblMessage.text="会计科目有修改，请保存";
+					return;
+				}else{
+					
+					var k:ArrayCollection = ObjectUtil.copy(kjkmlist) as ArrayCollection;
+//					var t:ArrayCollection = ObjectUtil.copy(tempkjkmlist) as ArrayCollection;
+					for each(var i:Object in tempkjkmlist){
+						for(var n:Number=k.length-1;n>=0;n--){
+							if(k.getItemAt(n).id==i.id){
+								k.removeItemAt(n);
+							}
+						}
+					}
+					if(k.length>0){
+						lblMessage.text="会计科目有修改，请保存";
+						return;
+					}
+				}
+				
+				lblMessage.text="";
+				
+			}
+			
+			private function saveKJKMTicketItem():void{
+				kjkmlist.addItem(allKJKMGrid.selectedItem);
+				compareKjkmlist();
+				
+			}
+			private function delKJKMTicketItem():void{
+				kjkmlist.removeItemAt(kjkmlist.getItemIndex(ticketKJKMGrid.selectedItem));
+				compareKjkmlist();
 			}
 			
 			public function del():void{
@@ -301,21 +446,36 @@
 			private function kindlblFun(item:Object):String{
 				var s:String ="";
 				if(item.type=="kind"){
-					s+="[分类]";
+					s+="[分类] ";
 				}
 				if(item.type=="ticket"){
-					s+="[票据]";
+					s+="[票据] ";
+				}
+				if(item.type=="kjkm"){
+					s+="[科目] ";
 				}
 				s+=item.name;
 				if(item.type=="kind"&&!item.is_active){
-					s+="(不可用)";
+					s+="(不可用) ";
 				}
 				return s;
 			}
 			
+			private function iconFn(item:Object):Class{
+				if(item.type=="kind"){
+					return addimg;
+				}
+				if(item.type=="ticket"){
+					return wximg;
+				}
+				if(item.type=="kjkm"){
+					return delimg;
+				}
+				return addimg;
+			}
 			
 			[Bindable]
-			private var buttonArr:ArrayCollection=new ArrayCollection([{'label':'新增财税分类下级','ico':addimg},{'label':'新增财税分类根级','ico':addimg},{'label':'新增同级','ico':addimg},{'label':'新增票据','ico':addimg},{'label':'同步数据','ico':refreshimg}]);
+			private var buttonArr:ArrayCollection=new ArrayCollection([{'label':'新增财税分类下级','ico':addimg},{'label':'新增财税分类根级','ico':addimg},{'label':'新增同级','ico':addimg},{'label':'新增票据','ico':addimg},{'label':'增加会计科目','ico':addimg},{'label':'同步数据','ico':refreshimg}]);
 			
 		]]>
 	</fx:Script>
@@ -347,7 +507,7 @@
 					
 				</mx:ComboBox>
 			</s:BorderContainer>
-				<mx:Tree id="kindTree" itemClick="showNode()"   width="100%" height="100%" dataProvider="{list}" labelField="name" labelFunction="kindlblFun" >
+				<mx:Tree id="kindTree"  iconFunction="iconFn" itemClick="showNode()"   width="100%" height="100%" dataProvider="{list}" labelField="name" labelFunction="kindlblFun" >
 					
 				</mx:Tree>
 		</s:BorderContainer>
@@ -369,76 +529,166 @@
 				</mx:ButtonBar>
 				
 			</s:BorderContainer>
-			
-			<s:Form width="100%" id="form1"   >
-				<s:FormHeading label="财税分类" fontWeight="bold">
+			<s:Scroller width="100%" height="100%">
+				<s:Group width="100%" height="100%">
 					
-				</s:FormHeading>
-				<s:FormItem label="分类名称:" textAlign="right">
-					<s:TextInput id="kindname" width="200"  text="" enabled="{kindSave.enabled}">
-						
-					</s:TextInput>
-				</s:FormItem>
-				<s:FormItem label="父类:" textAlign="right">
-					<s:Label id="fatherKind">
-						
-					</s:Label>
-				</s:FormItem>
-				<s:FormItem label="启用:" textAlign="right">
-					<s:CheckBox id="sfqy" label="可用"/>
-				</s:FormItem>
-				<s:FormItem>
-					<s:Button label="提交" click="saveKind()" id="kindSave" chromeColor="#faf0cc" height="30" >
-						
-					</s:Button>
-				</s:FormItem>
-				<s:TextInput id="kindId" visible="false">
-					
-				</s:TextInput>
-				<s:TextInput id="kindFatherId" visible="false">
-					
-				</s:TextInput>
-			</s:Form>
-			<s:Form width="100%" id="form2"   >
-				<s:FormHeading label="票据" fontWeight="bold">
-					
-				</s:FormHeading>
-				<s:FormItem label="票据名称:" textAlign="right">
-					<s:TextInput id="ticketName" width="200"  text="" enabled="{ticketSave.enabled}">
-						
-					</s:TextInput>
-				</s:FormItem>
-				<s:FormItem label="所属分类:" textAlign="right">
-					<s:Label id="taxKind">
-						
-					</s:Label>
-				</s:FormItem>
-				<s:FormItem label="所属行业:" textAlign="right">
-					<s:Label text="{hy.selectedItem.name}">
-						
-					</s:Label>
-				</s:FormItem>
 				
-				<s:FormItem>
-					<s:BorderContainer borderVisible="false" width="100%">
-						<s:layout>
-							<s:HorizontalLayout gap="10">
+					<s:BorderContainer width="100%"  borderVisible="false">
+						<s:Form width="100%" id="form1"  x="10" y="10" visible="{kindname.enabled}"  >
+							<mx:FormHeading label="财税分类" >
 								
-							</s:HorizontalLayout>
-						</s:layout>
-						<s:Button label="提交" chromeColor="#faf0cc" height="30" click="saveTicket()" id="ticketSave">
-						</s:Button>
-						<s:Button label="删除" chromeColor="#faf0cc" height="30" click="delTicket()" id="ticketDel">
-						</s:Button>
+							</mx:FormHeading>
+							<s:FormItem label="分类名称:" textAlign="right">
+								<s:TextInput id="kindname" width="200"  text="" enabled="{kindSave.enabled}">
+									
+								</s:TextInput>
+							</s:FormItem>
+							<s:FormItem label="父类:" textAlign="right">
+								<s:Label id="fatherKind">
+									
+								</s:Label>
+							</s:FormItem>
+							<s:FormItem label="启用:" textAlign="right">
+								<s:CheckBox id="sfqy" label="可用"/>
+							</s:FormItem>
+							<s:FormItem>
+								<s:Button label="提交" click="saveKind()" id="kindSave" chromeColor="#faf0cc" height="30" >
+									
+								</s:Button>
+							</s:FormItem>
+							<s:TextInput id="kindId" visible="false">
+								
+							</s:TextInput>
+							<s:TextInput id="kindFatherId" visible="false">
+								
+							</s:TextInput>
+						</s:Form>
+						<s:Form width="100%" id="form2"    x="10" y="10" visible="{ticketName.enabled}"  >
+							<mx:FormHeading label="票据" >
+								
+							</mx:FormHeading>
+							<s:FormItem label="票据名称:" textAlign="right">
+								
+								<s:TextArea  id="ticketName" width="500" height="100"  enabled="{ticketSave.enabled}">
+									
+								</s:TextArea>
+							</s:FormItem>
+							<s:FormItem label="所属分类:" textAlign="right">
+								<s:Label id="taxKind">
+									
+								</s:Label>
+							</s:FormItem>
+							<s:FormItem label="所属行业:" textAlign="right">
+								<s:Label text="{hy.selectedItem.name}">
+									
+								</s:Label>
+							</s:FormItem>
+							
+							<s:FormItem>
+								<s:BorderContainer borderVisible="false" width="100%">
+									<s:layout>
+										<s:HorizontalLayout gap="10">
+											
+										</s:HorizontalLayout>
+									</s:layout>
+									<s:Button label="提交" chromeColor="#faf0cc" height="30" click="saveTicket()" id="ticketSave">
+									</s:Button>
+									<s:Button label="删除" chromeColor="#faf0cc" height="30" click="delTicket()" id="ticketDel">
+									</s:Button>
+								</s:BorderContainer>
+							</s:FormItem>
+							<s:TextInput id="ticketId" visible="false">
+								
+							</s:TextInput>
+							<s:TextInput id="ticketKindId" visible="false">
+								
+							</s:TextInput>
+						</s:Form>
+						<s:Form width="100%" id="form3"    x="10" y="10" visible="{btnSaveKJKM.enabled}"  >
+							<mx:FormHeading label="会计科目"  >
+								
+							</mx:FormHeading>
+							<s:FormItem label="分类名称:" textAlign="right" >
+								<s:Label id="kjkmKind">
+									
+								</s:Label>
+							</s:FormItem>
+							<s:FormItem label="票据名称:" textAlign="right"  >
+								<s:Label id="kjkmTicket">
+									
+								</s:Label>
+							</s:FormItem>
+							<s:FormItem label="所属行业:" textAlign="right" >
+								<s:Label text="{hy.selectedItem.name}">
+									
+								</s:Label>
+							</s:FormItem>
+							<s:FormItem label="会计科目:" textAlign="right">
+								<s:BorderContainer borderVisible="false" width="100%">
+									<s:layout>
+										<s:VerticalLayout gap="10" verticalAlign="middle" horizontalAlign="left">
+											
+										</s:VerticalLayout>
+									</s:layout>
+									<mx:DataGrid id="ticketKJKMGrid" dataProvider="{kjkmlist}" width="100%" height="120" doubleClickEnabled="true" itemDoubleClick="delKJKMTicketItem()">
+										<mx:columns>
+											<mx:DataGridColumn dataField="name" headerText="会计科目" textAlign="left">
+												
+											</mx:DataGridColumn>
+										</mx:columns>
+									</mx:DataGrid>
+									<s:Label width="100%" text="{bz}" fontWeight="bold" textAlign="left">
+										
+									</s:Label>
+									<mx:DataGrid id="allKJKMGrid" dataProvider="{ToolUtil.kjkmList}" width="100%" height="250"  doubleClickEnabled="true" itemDoubleClick="saveKJKMTicketItem()">
+										<mx:columns>
+											<mx:DataGridColumn dataField="name"  headerText="会计科目" textAlign="left">
+												
+											</mx:DataGridColumn>
+										</mx:columns>
+									</mx:DataGrid>
+								</s:BorderContainer>
+							</s:FormItem>
+							<s:FormItem >
+								<s:BorderContainer borderVisible="false" width="100%">
+									<s:layout>
+										<s:HorizontalLayout gap="10">
+											
+										</s:HorizontalLayout>
+									</s:layout>
+									
+									<s:Button label="保存" chromeColor="#faf0cc" height="30" click="saveKJKMTicket()" >
+									</s:Button>
+									<s:Label id="lblMessage" color="#FF0000" text="">
+										
+									</s:Label>
+									
+								</s:BorderContainer>
+							</s:FormItem>
+							<mx:FormHeading label="添加新会计科目" >
+								
+							</mx:FormHeading>
+							<s:FormItem >
+								<s:BorderContainer borderVisible="false" width="100%">
+									<s:layout>
+										<s:HorizontalLayout gap="10">
+											
+										</s:HorizontalLayout>
+									</s:layout>
+									<s:TextInput width="200" id="kjkmName">
+										
+									</s:TextInput>
+									<s:Button label="提交" chromeColor="#faf0cc" height="30" click="saveKJKM()" id="btnSaveKJKM" >
+									</s:Button>
+									
+								</s:BorderContainer>
+							</s:FormItem>
+							
+						</s:Form>
 					</s:BorderContainer>
-				</s:FormItem>
-				<s:TextInput id="ticketId" visible="false">
-					
-				</s:TextInput>
-				<s:TextInput id="ticketKindId" visible="false">
-					
-				</s:TextInput>
-			</s:Form>
+				</s:Group>
+			</s:Scroller>
+			
 		</s:BorderContainer>
 	</s:BorderContainer>
 </control:CBorderContainer>

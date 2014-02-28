@@ -22,7 +22,8 @@ package util
 		
 		public static function init():void{
 			hyRefresh();
-//			deptRefresh();
+			kjkmRefresh();
+			bbRefresh();
 //			userRefresh();
 			sessionUserRefresh();
 		}
@@ -140,6 +141,48 @@ package util
 			if(result.success==true){
 				hyList.removeAll();
 				hyList.addAll(new ArrayCollection(result.result as Array));
+			}
+		}
+		[Bindable]
+		public static var kjkmList:ArrayCollection=new ArrayCollection();
+		
+		public static function kjkmRefresh(fun:Function=null):void{
+			
+			if(fun==null){
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKJKM",resultAllKjkm,"POST").send();
+			}else{
+				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKJKM",resultAllKjkm,"POST");
+				http.resultFunArr.addItem(fun);
+				http.send();
+				
+			}
+			
+		}
+		public static function resultAllKjkm(result:Object,e:ResultEvent):void{
+			if(result.success==true){
+				kjkmList.removeAll();
+				kjkmList.addAll(new ArrayCollection(result.result as Array));
+			}
+		}
+		[Bindable]
+		public static var bbList:ArrayCollection=new ArrayCollection();
+		
+		public static function bbRefresh(fun:Function=null):void{
+			
+			if(fun==null){
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBB",resultAllBB,"POST").send();
+			}else{
+				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBB",resultAllBB,"POST");
+				http.resultFunArr.addItem(fun);
+				http.send();
+				
+			}
+			
+		}
+		public static function resultAllBB(result:Object,e:ResultEvent):void{
+			if(result.success==true){
+				bbList.removeAll();
+				bbList.addAll(new ArrayCollection(result.result as Array));
 			}
 		}
 		
