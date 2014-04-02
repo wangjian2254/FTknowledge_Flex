@@ -21,11 +21,16 @@ package util
 		}
 		
 		public static function init():void{
-			hyRefresh();
-			kjkmRefresh();
-			bbRefresh();
+//			hyRefresh();
+//			kjkmRefresh();
+//			bbRefresh();
 //			userRefresh();
 			sessionUserRefresh();
+			
+			ruleRefresh();
+			ticketRefresh();
+			businessRefresh();
+			kmRefresh();
 		}
 		
 		
@@ -183,6 +188,92 @@ package util
 			if(result.success==true){
 				bbList.removeAll();
 				bbList.addAll(new ArrayCollection(result.result as Array));
+			}
+		}
+		
+		[Bindable]
+		public static var ticketList:ArrayCollection=new ArrayCollection();
+		
+		public static function ticketRefresh(fun:Function=null):void{
+			
+			if(fun==null){
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getAllTicket",resultAllTicket,"POST").send();
+			}else{
+				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("/ft/getAllTicket",resultAllTicket,"POST");
+				http.resultFunArr.addItem(fun);
+				http.send();
+				
+			}
+			
+		}
+		public static function resultAllTicket(result:Object,e:ResultEvent):void{
+			if(result.success==true){
+				ticketList.removeAll();
+				ticketList.addAll(new ArrayCollection(result.result as Array));
+			}
+		}
+		[Bindable]
+		public static var businessList:ArrayCollection=new ArrayCollection();
+		
+		public static function businessRefresh(fun:Function=null):void{
+			
+			if(fun==null){
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getAllBusiness",resultAllBusiness,"POST").send();
+			}else{
+				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("/ft/getAllBusiness",resultAllBusiness,"POST");
+				http.resultFunArr.addItem(fun);
+				http.send();
+				
+			}
+			
+		}
+		public static function resultAllBusiness(result:Object,e:ResultEvent):void{
+			if(result.success==true){
+				businessList.removeAll();
+				businessList.addAll(new ArrayCollection(result.result as Array));
+			}
+		}
+		
+		[Bindable]
+		public static var kmList:ArrayCollection=new ArrayCollection();
+		
+		public static function kmRefresh(fun:Function=null):void{
+			
+			if(fun==null){
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getAllKM",resultAllKM,"POST").send();
+			}else{
+				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("/ft/getAllKM",resultAllKM,"POST");
+				http.resultFunArr.addItem(fun);
+				http.send();
+				
+			}
+			
+		}
+		public static function resultAllKM(result:Object,e:ResultEvent):void{
+			if(result.success==true){
+				kmList.removeAll();
+				kmList.addAll(new ArrayCollection(result.result as Array));
+			}
+		}
+		[Bindable]
+		public static var ruleList:ArrayCollection=new ArrayCollection();
+		
+		public static function ruleRefresh(fun:Function=null):void{
+			
+			if(fun==null){
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getRule",resultAllRule,"POST").send();
+			}else{
+				var http:CHTTPService=HttpServiceUtil.getCHTTPServiceAndResult("/ft/getRule",resultAllRule,"POST");
+				http.resultFunArr.addItem(fun);
+				http.send();
+				
+			}
+			
+		}
+		public static function resultAllRule(result:Object,e:ResultEvent):void{
+			if(result.success==true){
+				ruleList.removeAll();
+				ruleList.addAll(new ArrayCollection(result.result as Array));
 			}
 		}
 		

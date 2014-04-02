@@ -8,13 +8,18 @@
 	<fx:Script>
 		<![CDATA[
 			import control.AreaPointControl;
+			import control.AutoKJEdit;
+			import control.AutoKJQuery;
 			import control.BBEdit;
+			import control.BusinessEdit;
 			import control.CBorderContainer;
 			import control.ChangePassword;
 			import control.KnowledgeEdit;
+			import control.KnowledgeQuery;
 			import control.LoginUser;
 			import control.RegisterUser;
 			import control.TaxKindEdit;
+			import control.TicketEdit;
 			import control.UserControl;
 			
 			import events.ChangeMenuEvent;
@@ -44,16 +49,24 @@
 			import util.LoadingUtil;
 			import util.ToolUtil;
 			import util.UserUtil;
+			
+			
 			public function init():void{
 				LoadingUtil.loading=loading;
 				ToolUtil.init();
 				ToolUtil.sessionUserRefresh(currentUser);
 				menuXML.send();
 				gongNengStack.addEventListener(ChangeMenuEvent.ChangeMenu_EventStr,changeMenu);
+				ToolUtil.hyRefresh(welcome);
 				
 			}
-			
-			private function currentUser(result:Object,e:ResultEvent):void{
+			private function welcome(result:Object,e:ResultEvent):void{
+				var event1:MenuEvent=new MenuEvent(MenuEvent.CHANGE);
+				var xml1:XML=new XML("<menuitem label='查询' mod='autokjquery'></menuitem>");
+				event1.item=xml1; 
+				onMenuChange(event1);
+			}
+			public function currentUser(result:Object,e:ResultEvent):void{
 				if(result.success){
 					if(!result.result){
 						userinfoGroup.visible=false;
@@ -62,11 +75,13 @@
 						userinfoGroup2.visible=false;
 						userinfoGroup.visible=true;
 					}
+					menuXML.send();
 				}
 			}
 			
 			private var myMenuXML:XML=null;
 			public function setMenu(evt:ResultEvent):void{
+				menuContainer.removeAllElements();
 				myMenuXML=new XML(evt.result.toString());
 				//				myMenuXML=evt.result as XML;
 				var xml:XML;
@@ -223,6 +238,21 @@
 						break;
 					case 'bbedit':
 						c=new BBEdit();
+						break;
+					case 'knowledgequery':
+						c=new KnowledgeQuery();
+						break;
+					case 'autokjedit':
+						c=new AutoKJEdit();
+						break;
+					case 'ticketedit':
+						c=new TicketEdit();
+						break;
+					case 'businessedit':
+						c=new BusinessEdit();
+						break;
+					case 'autokjquery':
+						c=new AutoKJQuery();
 						break;
 					
 					

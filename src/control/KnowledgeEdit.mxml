@@ -30,7 +30,8 @@
 			private var bbitemlist:ArrayCollection=new ArrayCollection();
 			
 			override public   function  init(e:FlexEvent):void{
-				refreshTaxKind();
+				
+				bb.removeAllElements();
 				for each(var item:Object in ToolUtil.bbList){
 					var bbitem:BBItemEdit=new BBItemEdit();
 					bbitem.bbid = item.id;
@@ -40,6 +41,7 @@
 					bb.addElement(bbitem);
 					bbitemlist.addItem(bbitem);
 				}
+				refreshTaxKind();
 			}
 			override public function closeContainer(e:CloseEvent):void{
 				dispatchEvent(e);
@@ -60,12 +62,27 @@
 			
 			//新增，保存，删除的处理函数
 			private function clickHander(e:ItemClickEvent):void{
-				if(e.label=="新增"){
+				if(e.label=="保存"){
+					saveData();
 				}
 				
 				
 			}
 			
+			private function saveData():void{
+				var obj:Object = new Object();
+				for each(var element:BBItemEdit in bbitemlist){
+					element.getData(obj);
+				}
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/saveBBFieldValuebyTicketKjkm",showSaveResult,"POST").send(obj)
+					
+			}
+			private function showSaveResult(result:Object,e:ResultEvent):void{
+				
+				if(result.success){
+					Alert.show("保存成功","提示");
+				}
+			}
 			
 			
 			public function showBB():void{
@@ -176,7 +193,7 @@
 				
 			</mx:Tree>
 		</s:BorderContainer>
-		<s:BorderContainer id="rightContainner" width="100%" height="270" backgroundAlpha="0"  borderVisible="false">
+		<s:BorderContainer id="rightContainner" width="100%" height="345" backgroundAlpha="0"  borderVisible="false">
 			<s:layout>
 				<s:VerticalLayout gap="5">
 					
@@ -196,9 +213,9 @@
 			</s:BorderContainer>
 			<s:Scroller width="100%" height="100%">
 				<s:Group width="100%" height="100%">
-					<s:BorderContainer  minWidth="500" id="bb" borderVisible="false">
+					<s:BorderContainer  minWidth="500" id="bb" borderVisible="false" backgroundColor="#000000">
 						<s:layout>
-							<s:HorizontalLayout gap="1" horizontalAlign="left" verticalAlign="top">
+							<s:HorizontalLayout gap="0" horizontalAlign="left" verticalAlign="top">
 								
 							</s:HorizontalLayout>
 						</s:layout>

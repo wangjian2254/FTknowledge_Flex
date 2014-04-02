@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="220"  creationComplete="showFl()" borderVisible="false" xmlns:uicontrol="uicontrol.*">
+	<s:layout>
+		<s:HorizontalLayout gap="1" verticalAlign="top"/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import httpcontrol.HttpServiceUtil;
+			import mx.controls.Alert;
+			import util.ToolUtil;
+			import json.JParser;
+			import mx.events.CloseEvent;
+			import mx.managers.CursorManager;
+			import mx.managers.PopUpManager;
+			
+			import mx.core.FlexGlobals;
+			
+			public var pzid:String="";
+			public var bid:String=null;
+			
+			[Bindable]
+			public var editenable:Boolean=true;
+			
+			[Bindable]
+			public var fllist:ArrayCollection=new ArrayCollection();
+			
+			
+			private var file:FileReference;
+			private var byteArray:ByteArray;
+			private var bitmapData:BitmapData;
+			private var loader:Loader=new Loader();
+			public var bar:CProgressBar=null;
+			
+			private function addFl():void{
+				var data:Object = new Object();
+				data["kjkm"]= "";
+				data["fx"] = false;
+				fllist.addItem(data);
+				var v:Object =new Object();
+				v.columnIndex=0;
+				v.rowIndex = fllist.length-1;
+				flgrid.editedItemPosition=v;
+//				flgrid.
+				
+				Security.allowDomain("*");
+				
+			}
+			private function delFl():void{
+				if(flgrid.selectedItem){
+					fllist.removeItemAt(fllist.getItemIndex(flgrid.selectedItem));
+				}
+			}
+			
+			private function uploadImage():void{
+				
+			}
+			
+			
+			public function showFl():void{
+				if(!pzid){
+					return;
+				}
+				upImage.visible=true;
+				var data:Object = new Object();
+				data["pzid"]=pzid;
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getPZ",showPZResult,"POST").send(data);
+				if(editenable){
+					btnpanel.visible=true;
+					btnpanel.height=30;
+				}else{
+					btnpanel.visible=false;
+					btnpanel.height=0;
+				}
+				file=new FileReference();
+				file.addEventListener(Event.SELECT, fileReferenceSelectHandler);
+				file.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA,uploadImageResult);
+				
+			}
+			
+			public function showPZResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					desc.text = result.result.pzdesc;
+					fllist = new ArrayCollection(result.result.fllist as Array);
+					imgurl = result.result.imgurl;
+					pzimg.source=imgurl;
+					if(imgurl){
+						delImage.visible=true;
+						upImage.visible=false;
+						upload.visible=false;
+					}else{
+						delImage.visible=false;
+						upImage.visible=true;
+						upload.visible=false;
+					}
+					
+				}
+			}
+			
+			public function uploadData():void{
+				if(!bid){
+					Alert.show("缺少关系数据。","提示");
+					return;
+				}
+				var data:Object = new Object();
+				data["bid"]=bid;
+				data["pzid"]=pzid;
+				data["desc"]= desc.text;
+				data["fl"]=JParser.encode(fllist);
+				
+				if(pzid==""&&fllist.length==0){
+					
+					return ;
+				}
+				
+				HttpServiceUtil.getCHTTPServiceAndResult("/ft/savePZ",savePZResult,"POST").send(data);
+				
+			}
+			
+			public function savePZResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					pzid = result.result.pzid;
+					bid = result.result.bid;
+					
+					upImage.visible=true;
+				}
+			}
+		    public function kjkmlbl(item:Object, column:DataGridColumn):String{
+				for each(var obj:Object in ToolUtil.kmList){
+					if(item.kjkm==obj.id){
+						return obj.name;
+					}
+				}
+				return "";
+			}
+		    public function fxlbl(item:Object, column:DataGridColumn):String{
+				if(item.fx){
+					return "借";
+				}
+				if(item.fx==false){
+					return "贷";
+				}
+				return "";
+			}
+			
+			//选择上传的图片
+			private function choose():void
+			{
+				file.removeEventListener(Event.COMPLETE,completeHandle);
+				file.addEventListener(Event.COMPLETE,fileReferenceCompleteHandler);
+				var imageTypes:FileFilter=new FileFilter("Images (*.jpg, *.jpeg, *.png)", "*.jpg;*.jpeg;*.png");
+				var allTypes:Array=new Array(imageTypes);
+				file.browse(allTypes);
+				//                file.browse();
+			}
+			//载入本地图片
+			private function fileReferenceCompleteHandler(e:Event):void
+			{
+				byteArray=file.data;
+				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, loaderCompleteHandler);
+				loader.loadBytes(byteArray);
+				
+			}
+			
+			//图片载入完成显示在预览框中
+			private function loaderCompleteHandler(e:Event):void
+			{
+				var bitmap:Bitmap=Bitmap(loader.content);
+				upload.visible=true;
+				bitmapData=bitmap.bitmapData;
+				pzimg.source=bitmap;
+			}
+			
+			//选择文件动作监听
+			private function fileReferenceSelectHandler(e:Event):void
+			{
+				file.removeEventListener(ProgressEvent.PROGRESS, onProgress);
+				file.load();
+			}
+			
+//			private function toUpload():void
+//			{
+//				if (bitmapData == null)
+//				{
+//					Alert.show("请您先选择要上传的图片");
+//				}
+//				else
+//				{
+//					Alert.show("上传 " + file.name + " (共 " + Math.round(file.size) + " 字节)?", "确认上传", Alert.YES | Alert.NO, null, proceedWithUpload);
+//				}
+//			}
+			
+			//监听文件上传状态
+			private function onProgress(e:ProgressEvent):void
+			{
+				//				lbProgress.text=" 已上传 " + e.bytesLoaded + " 字节，共 " + e.bytesTotal + " 字节";
+				var proc:uint=e.bytesLoaded / e.bytesTotal * 100;
+				bar.setProgress(proc, 100);
+				bar.label="当前进度: " + " " + proc + "%";
+				if (e.bytesLoaded == e.bytesTotal)
+				{
+					CursorManager.removeBusyCursor();
+				}
+			}
+			
+			//上传图片到服务器
+			private function proceedWithUpload():void
+			{
+				//进度监听
+				file.addEventListener(ProgressEvent.PROGRESS, onProgress);
+				var request:URLRequest=new URLRequest("/ft/imgUploaded?mid="+pzid+"&mtype=pz");
+				request.method = URLRequestMethod.POST; 
+				
+				request.contentType = "multipart/form-data"; 
+				
+				
+				bar.visible=true; 
+				
+				
+				//设置鼠标忙状态
+				CursorManager.setBusyCursor();
+				try
+				{
+					file.upload(request,'file',true);    
+					
+				}
+				catch (error:Error)
+				{
+					Alert.show("上传失败");
+					bar.visible = false;
+				}
+				
+				
+			}
+			
+			//上传完成调用
+			private function completeHandle(event:Event):void
+			{
+				byteArray=null;
+				bar.visible = false;
+				upload.visible=false;
+//				pzimg.source = null;
+				
+			}
+			
+			private function uploadImageResult(e:DataEvent):void{
+				try{
+					var result:Object=JParser.decode(e.data);
+					if(result.success==true){
+						
+						showFl();
+						byteArray=null;
+						bar.visible = false;
+						upload.visible=false;
+						
+					}
+				}catch(error:Error){
+					
+					var i:Number =1;
+				}
+			}
+			
+			private var imgurl:String = "";
+			private function deleteImage():void{
+				if(!imgurl){
+					return;
+				}
+				Alert.show("确认删除图片?", "提示", Alert.YES | Alert.NO, null, deleteImg);
+				
+			}
+			//上传图片到服务器
+			private function deleteImg(e:CloseEvent):void
+			{
+				if (e.detail == Alert.YES){
+					var data:Object = new Object();
+					data["imgurl"] = imgurl;
+					HttpServiceUtil.getCHTTPServiceAndResult("/ft/delImg",delImageResult,"POST").send(data);
+				}
+			}
+			private function delImageResult(result:Object,e:ResultEvent):void{
+				if(result.success){
+					pzimg.source=null;
+					showFl();
+				}
+			}
+			
+			private function showbig():void{
+				var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigImage,true) as BigImage;
+				s.imgurl = imgurl;
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+	</fx:Declarations>
+	<s:BorderContainer width="300" height="100%" borderVisible="false"  >
+		<s:layout>
+			<s:VerticalLayout gap="1">
+				
+			</s:VerticalLayout>
+		</s:layout>
+		
+	
+	<s:BorderContainer id="btnpanel" width="100%" height="30" borderVisible="false" visible="{editenable}">
+		<s:layout>
+			<s:HorizontalLayout gap="3" verticalAlign="middle" paddingLeft="5">
+				
+			</s:HorizontalLayout>
+		</s:layout>
+		<s:Button chromeColor="#faf0cc" label="新增" click="addFl()" width="50">
+			
+		</s:Button>
+		<s:Button chromeColor="#faf0cc" label="删分录" click="delFl()" width="60">
+			
+		</s:Button>
+		<s:Button chromeColor="#faf0cc" visible="false" id="upImage" label="选图片" click="choose()" width="60">
+			
+		</s:Button>
+		<s:Button chromeColor="#faf0cc" visible="false" id="upload" label="上传" click="proceedWithUpload()" width="50">
+			
+		</s:Button>
+		<s:Button chromeColor="#faf0cc" visible="false" id="delImage" label="删图片" click="deleteImage()" width="60">
+			
+		</s:Button>
+	</s:BorderContainer>
+	<mx:DataGrid width="100%" height="100%" minHeight="150"  dataProvider="{fllist}" id="flgrid" editable="{editenable}">
+		<mx:columns>
+			<mx:DataGridColumn headerText="会计科目" labelFunction="kjkmlbl" dataField="kjkm" editorDataField="data" sortable="false" editable="{editenable}">
+				<mx:itemEditor>
+					<fx:Component>
+						<mx:HBox implements="mx.controls.listClasses.IDropInListItemRenderer,mx.managers.IFocusManagerComponent">
+							<fx:Script>
+								<![CDATA[
+									import mx.collections.ArrayCollection;
+									import mx.controls.dataGridClasses.DataGridListData;
+									import mx.controls.listClasses.BaseListData;
+									import mx.core.INavigatorContent;
+									
+									import util.ToolUtil;
+									private var _listData:DataGridListData;
+									// Define a property for returning the new value to the cell.
+									[Bindable]
+									private var _value:Object;  
+									
+									[Bindable]
+									private var list:ArrayCollection=new ArrayCollection();
+									
+									// Implement the drawFocus() method for the VBox.
+									override public function drawFocus(draw:Boolean):void {
+										cbo.setFocus();
+										cbo.open();
+										
+									}
+									
+									
+									
+									override public function get data():Object {
+										if(cbo==null){
+											return super.data;
+										}else{
+											if(cbo.selectedIndex==-1){
+												for each(var it:Object in cbo.dataProvider){
+													if(it[cbo.labelField]==cbo.data||it[cbo.valueField]==cbo.data){
+														return it[cbo.valueField]
+													}
+												}
+												return null;
+											}
+											return cbo.data;
+										}
+									}            
+									
+									override public function set data(value:Object):void {
+										super.data=value[_listData.dataField];
+										_value=value;
+										changeFilterValue();
+										cbo.setValue(value[_listData.dataField]);
+										
+										//												
+										//													changeFilterValue();
+									} 
+									
+									public function get listData():BaseListData
+									{
+										return _listData;
+									}
+									
+									public function set listData(value:BaseListData):void
+									{
+										_listData = DataGridListData(value);
+										cbo.listData = DataGridListData(value);
+									}
+									
+									public function changeCode():void{
+										if(cbo.selectedItem==null){
+											return;
+										}
+										
+									}
+									
+									public function changeFilterValue():void{
+										if(cbo.filtervalue!=_value.code){
+											cbo.filtervalue=_value.code;
+										}
+									}
+									
+								]]>
+							</fx:Script>
+							<uicontrol:FliterComboBox id="cbo"  dataProvider="{ToolUtil.kmList}"   labelField="name" valueField="id" change="changeCode()" height="{this.height}" width="{this.width}" styleName="fliterComboBox" dropdownWidth="200">
+								
+							</uicontrol:FliterComboBox>
+						</mx:HBox>
+					</fx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="方向" labelFunction="fxlbl" dataField="fx" width="80"  editorDataField="data" sortable="false" editable="{editenable}">
+				<mx:itemEditor>
+					<fx:Component>
+						<mx:HBox implements="mx.controls.listClasses.IDropInListItemRenderer,mx.managers.IFocusManagerComponent">
+							<fx:Script>
+								<![CDATA[
+									import mx.collections.ArrayCollection;
+									import mx.controls.dataGridClasses.DataGridListData;
+									import mx.controls.listClasses.BaseListData;
+									import mx.core.INavigatorContent;
+									
+									private var _listData:DataGridListData;
+									// Define a property for returning the new value to the cell.
+									[Bindable]
+									private var _value:Object;  
+									
+									[Bindable]
+									private var list:ArrayCollection=new ArrayCollection([{'name':"借","id":true},{'name':"贷","id":false}]);
+									
+									// Implement the drawFocus() method for the VBox.
+									override public function drawFocus(draw:Boolean):void {
+										cbo.setFocus();
+										cbo.open();
+										
+									}
+									
+									
+									
+									override public function get data():Object {
+										if(cbo==null){
+											return super.data;
+										}else{
+											if(cbo.selectedIndex==-1){
+//												for each(var it:Object in cbo.dataProvider){
+//													if(it[cbo.labelField]==cbo.data||it[cbo.valueField]==cbo.data){
+//														return it[cbo.valueField]
+//													}
+//												}
+												return "";
+											}
+											return cbo.data;
+										}
+									}            
+									
+									override public function set data(value:Object):void {
+										super.data=value[_listData.dataField];
+										_value=value;
+										changeFilterValue();
+										cbo.setValue(value[_listData.dataField]);
+										
+										//												
+										//													changeFilterValue();
+									} 
+									
+									public function get listData():BaseListData
+									{
+										return _listData;
+									}
+									
+									public function set listData(value:BaseListData):void
+									{
+										_listData = DataGridListData(value);
+										cbo.listData = DataGridListData(value);
+									}
+									
+									public function changeCode():void{
+										if(cbo.selectedItem==null){
+											return;
+										}
+										
+									}
+									
+									public function changeFilterValue():void{
+										if(cbo.filtervalue!=_value.code){
+											cbo.filtervalue=_value.code;
+										}
+									}
+									
+								]]>
+							</fx:Script>
+							<uicontrol:FliterComboBox id="cbo"  dataProvider="{list}"   labelField="name" valueField="id" change="changeCode()" height="{this.height}" width="{this.width}" styleName="fliterComboBox" dropdownWidth="200">
+								
+							</uicontrol:FliterComboBox>
+						</mx:HBox>
+					</fx:Component>
+				</mx:itemEditor>
+			</mx:DataGridColumn>
+		</mx:columns>
+	</mx:DataGrid>
+	<s:TextArea id="desc" width="100%" height="40">
+		
+	</s:TextArea>
+	</s:BorderContainer>
+	<mx:Image id="pzimg" click="showbig()"  height="100%" >
+		
+	</mx:Image>
+</s:BorderContainer>
