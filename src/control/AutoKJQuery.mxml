@@ -48,6 +48,8 @@
 			private var kjzd:String="";
 			[Bindable]
 			private var sf:String="";
+			[Bindable]
+			private var ssts:String="";
 			
 			override public   function  init(e:FlexEvent):void{
 				
@@ -78,6 +80,7 @@
 					businessList.removeAll();
 					
 					sf="";
+					ssts="";
 					kjzd="";
 					pzlist.removeAllElements();
 				}
@@ -92,6 +95,7 @@
 					}
 					pzlist.removeAllElements();
 					sf="";
+					ssts="";
 					kjzd="";
 				}
 			}
@@ -126,6 +130,7 @@
 					businessList.removeAll();
 					kjkmList.removeAll();
 					sf="";
+					ssts="";
 					kjzd="";
 					pzlist.removeAllElements();
 				}
@@ -226,6 +231,7 @@
 				if(result.success){
 					kjzd=result.result.kjzd;
 					sf=result.result.sf;
+					ssts=result.result.ssts;
 					
 				}
 			}
@@ -244,6 +250,7 @@
 					
 					kjzd=result.result.kjzd;
 					sf=result.result.sf;
+					ssts=result.result.ssts;
 					
 				}
 			}
@@ -277,6 +284,10 @@
 			private function showSF():void{
 				var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigText,true) as BigText;
 				s.data = sf;
+			}
+			private function showSSTS():void{
+				var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigText,true) as BigText;
+				s.data = ssts;
 			}
 			private function bigImage(event:MouseEvent):void{
 				if(event.currentTarget is Image){
@@ -356,6 +367,7 @@
 								</s:layout>
 								<s:Button id="kjztbtn" label="会计制度" visible="{kjzd?true:false}" height="25" chromeColor="#faf0cc" click="showKJZD()" />
 								<s:Button id="kjsf" label="税法" visible="{sf?true:false}" height="25" chromeColor="#faf0cc"  click="showSF()" />
+								<s:Button id="kjssts" label="涉税提示" visible="{ssts?true:false}" height="25" chromeColor="#faf0cc"  click="showSSTS()" />
 							</s:BorderContainer>
 							<s:Scroller width="100%" height="100%">
 								<s:Group width="100%" height="100%">

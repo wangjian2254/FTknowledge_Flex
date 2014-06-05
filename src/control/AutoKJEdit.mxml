@@ -160,6 +160,7 @@
 				obj["businessid"] = businessTree.selectedItem.id;
 				obj["kjzd"] = kjzd.text;
 				obj["sf"] = sf.text;
+				obj["ssts"] = ssts.text;
 				
 				HttpServiceUtil.getCHTTPServiceAndResult("/ft/saveRelation",saveDataResult,"POST").send(obj);
 				
@@ -199,6 +200,7 @@
 					kjkmList.removeAll();
 					kjzd.text="";
 					sf.text="";
+					ssts.text="";
 				}
 			}
 			
@@ -219,6 +221,7 @@
 					kjkmList.removeAll();
 					kjzd.text="";
 					sf.text="";
+					ssts.text="";
 				}
 			}
 			private function selectTicket():void{
@@ -256,6 +259,7 @@
 					kjkmList.removeAll();
 					kjzd.text="";
 					sf.text="";
+					ssts.text="";
 				}
 			}
 			private function selectBusiness():void{
@@ -272,6 +276,7 @@
 				if(result.success){
 					kjzd.text=result.result.kjzd;
 					sf.text=result.result.sf;
+					ssts.text=result.result.ssts;
 				}
 			}
 			private function showBusiness():void{
@@ -308,6 +313,7 @@
 					
 					kjzd.text=result.result.kjzd;
 					sf.text=result.result.sf;
+					ssts.text=result.result.ssts;
 					
 				}
 			}
@@ -434,6 +440,10 @@
 					
 					<s:Label text="税法" />
 					<s:TextArea width="100%" height="100" id="sf">
+						
+					</s:TextArea>
+					<s:Label text="涉税提示" />
+					<s:TextArea width="100%" height="100" id="ssts">
 						
 					</s:TextArea>
 					<s:BorderContainer id="pzlist" width="100%" height="100%" borderVisible="false">

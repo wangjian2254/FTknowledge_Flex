@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				   xmlns:s="library://ns.adobe.com/flex/spark" 
-				   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="220"  creationComplete="showFl()" borderVisible="false" xmlns:uicontrol="uicontrol.*">
+				   xmlns:mx="library://ns.adobe.com/flex/mx" width="100%" height="170"  creationComplete="showFl()" borderVisible="false" xmlns:uicontrol="uicontrol.*">
 	<s:layout>
-		<s:HorizontalLayout gap="1" verticalAlign="top"/>
+		<s:VerticalLayout gap="1" verticalAlign="top"/>
 	</s:layout>
 	<fx:Script>
 		<![CDATA[
@@ -64,7 +64,6 @@
 				if(!pzid){
 					return;
 				}
-				upImage.visible=true;
 				var data:Object = new Object();
 				data["pzid"]=pzid;
 				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getPZ",showPZResult,"POST").send(data);
@@ -75,9 +74,6 @@
 					btnpanel.visible=false;
 					btnpanel.height=0;
 				}
-				file=new FileReference();
-				file.addEventListener(Event.SELECT, fileReferenceSelectHandler);
-				file.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA,uploadImageResult);
 				
 			}
 			
@@ -85,17 +81,18 @@
 				if(result.success){
 					desc.text = result.result.pzdesc;
 					fllist = new ArrayCollection(result.result.fllist as Array);
-					imgurl = result.result.imgurl;
-					pzimg.source=imgurl;
-					if(imgurl){
-						delImage.visible=true;
-						upImage.visible=false;
-						upload.visible=false;
-					}else{
-						delImage.visible=false;
-						upImage.visible=true;
-						upload.visible=false;
+					var jhjn:Number=0;
+					var dhjn:Number=0;
+					for each(var obj:Object in fllist){
+						if (obj.fx){
+							jhjn+=new Number(obj.jje);
+						}else{
+							
+							dhjn+=new Number(obj.dje);
+						}
 					}
+					jhj.text=jhjn.toFixed(2);
+					dhj.text=dhjn.toFixed(2);
 					
 				}
 			}
@@ -125,7 +122,6 @@
 					pzid = result.result.pzid;
 					bid = result.result.bid;
 					
-					upImage.visible=true;
 				}
 			}
 		    public function kjkmlbl(item:Object, column:DataGridColumn):String{
@@ -146,164 +142,14 @@
 				return "";
 			}
 			
-			//选择上传的图片
-			private function choose():void
-			{
-				file.removeEventListener(Event.COMPLETE,completeHandle);
-				file.addEventListener(Event.COMPLETE,fileReferenceCompleteHandler);
-				var imageTypes:FileFilter=new FileFilter("Images (*.jpg, *.jpeg, *.png)", "*.jpg;*.jpeg;*.png");
-				var allTypes:Array=new Array(imageTypes);
-				file.browse(allTypes);
-				//                file.browse();
-			}
-			//载入本地图片
-			private function fileReferenceCompleteHandler(e:Event):void
-			{
-				byteArray=file.data;
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, loaderCompleteHandler);
-				loader.loadBytes(byteArray);
-				
-			}
 			
-			//图片载入完成显示在预览框中
-			private function loaderCompleteHandler(e:Event):void
-			{
-				var bitmap:Bitmap=Bitmap(loader.content);
-				upload.visible=true;
-				bitmapData=bitmap.bitmapData;
-				pzimg.source=bitmap;
-			}
-			
-			//选择文件动作监听
-			private function fileReferenceSelectHandler(e:Event):void
-			{
-				file.removeEventListener(ProgressEvent.PROGRESS, onProgress);
-				file.load();
-			}
-			
-//			private function toUpload():void
-//			{
-//				if (bitmapData == null)
-//				{
-//					Alert.show("请您先选择要上传的图片");
-//				}
-//				else
-//				{
-//					Alert.show("上传 " + file.name + " (共 " + Math.round(file.size) + " 字节)?", "确认上传", Alert.YES | Alert.NO, null, proceedWithUpload);
-//				}
-//			}
-			
-			//监听文件上传状态
-			private function onProgress(e:ProgressEvent):void
-			{
-				//				lbProgress.text=" 已上传 " + e.bytesLoaded + " 字节，共 " + e.bytesTotal + " 字节";
-				var proc:uint=e.bytesLoaded / e.bytesTotal * 100;
-				bar.setProgress(proc, 100);
-				bar.label="当前进度: " + " " + proc + "%";
-				if (e.bytesLoaded == e.bytesTotal)
-				{
-					CursorManager.removeBusyCursor();
-				}
-			}
-			
-			//上传图片到服务器
-			private function proceedWithUpload():void
-			{
-				//进度监听
-				file.addEventListener(ProgressEvent.PROGRESS, onProgress);
-				var request:URLRequest=new URLRequest("/ft/imgUploaded?mid="+pzid+"&mtype=pz");
-				request.method = URLRequestMethod.POST; 
-				
-				request.contentType = "multipart/form-data"; 
-				
-				
-				bar.visible=true; 
-				
-				
-				//设置鼠标忙状态
-				CursorManager.setBusyCursor();
-				try
-				{
-					file.upload(request,'file',true);    
-					
-				}
-				catch (error:Error)
-				{
-					Alert.show("上传失败");
-					bar.visible = false;
-				}
-				
-				
-			}
-			
-			//上传完成调用
-			private function completeHandle(event:Event):void
-			{
-				byteArray=null;
-				bar.visible = false;
-				upload.visible=false;
-//				pzimg.source = null;
-				
-			}
-			
-			private function uploadImageResult(e:DataEvent):void{
-				try{
-					var result:Object=JParser.decode(e.data);
-					if(result.success==true){
-						
-						showFl();
-						byteArray=null;
-						bar.visible = false;
-						upload.visible=false;
-						
-					}
-				}catch(error:Error){
-					
-					var i:Number =1;
-				}
-			}
-			
-			private var imgurl:String = "";
-			private function deleteImage():void{
-				if(!imgurl){
-					return;
-				}
-				Alert.show("确认删除图片?", "提示", Alert.YES | Alert.NO, null, deleteImg);
-				
-			}
-			//上传图片到服务器
-			private function deleteImg(e:CloseEvent):void
-			{
-				if (e.detail == Alert.YES){
-					var data:Object = new Object();
-					data["imgurl"] = imgurl;
-					HttpServiceUtil.getCHTTPServiceAndResult("/ft/delImg",delImageResult,"POST").send(data);
-				}
-			}
-			private function delImageResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					pzimg.source=null;
-					showFl();
-				}
-			}
-			
-			private function showbig():void{
-				var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigImage,true) as BigImage;
-				s.imgurl = imgurl;
-				
-			}
 			
 		]]>
 	</fx:Script>
 	<fx:Declarations>
 		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
 	</fx:Declarations>
-	<s:BorderContainer width="300" height="100%" borderVisible="false"  >
-		<s:layout>
-			<s:VerticalLayout gap="1">
-				
-			</s:VerticalLayout>
-		</s:layout>
+
 		
 	
 	<s:BorderContainer id="btnpanel" width="100%" height="30" borderVisible="false" visible="{editenable}">
@@ -318,18 +164,12 @@
 		<s:Button chromeColor="#faf0cc" label="删分录" click="delFl()" width="60">
 			
 		</s:Button>
-		<s:Button chromeColor="#faf0cc" visible="false" id="upImage" label="选图片" click="choose()" width="60">
-			
-		</s:Button>
-		<s:Button chromeColor="#faf0cc" visible="false" id="upload" label="上传" click="proceedWithUpload()" width="50">
-			
-		</s:Button>
-		<s:Button chromeColor="#faf0cc" visible="false" id="delImage" label="删图片" click="deleteImage()" width="60">
-			
-		</s:Button>
+		
 	</s:BorderContainer>
-	<mx:DataGrid width="100%" height="100%" minHeight="150"  dataProvider="{fllist}" id="flgrid" editable="{editenable}">
+	<mx:DataGrid width="100%" height="100%" minHeight="100"  dataProvider="{fllist}" id="flgrid" editable="{editenable}">
 		<mx:columns>
+			<mx:DataGridColumn headerText="摘要" dataField="zy" editorDataField="text" sortable="false" editable="{editenable}">
+			</mx:DataGridColumn>
 			<mx:DataGridColumn headerText="会计科目" labelFunction="kjkmlbl" dataField="kjkm" editorDataField="data" sortable="false" editable="{editenable}">
 				<mx:itemEditor>
 					<fx:Component>
@@ -505,13 +345,30 @@
 					</fx:Component>
 				</mx:itemEditor>
 			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="借金额" dataField="jje" textAlign="right" editorDataField="text" sortable="false" editable="{editenable}" width="150">
+			</mx:DataGridColumn>
+			<mx:DataGridColumn headerText="贷金额" dataField="dje" textAlign="right" editorDataField="text" sortable="false" editable="{editenable}" width="150">
+			</mx:DataGridColumn>
 		</mx:columns>
 	</mx:DataGrid>
+	<s:BorderContainer width="100%" height="25" borderVisible="false">
+		<s:layout>
+			<s:HorizontalLayout gap="1" horizontalAlign="right" paddingRight="17">
+				
+			</s:HorizontalLayout>
+		</s:layout>
+		<s:Label verticalAlign="middle" height="25" textAlign="right" width="150" text="合计：">
+			
+		</s:Label>
+		<s:Label id="jhj" verticalAlign="middle" height="25" textAlign="right" width="150">
+			
+		</s:Label>
+		<s:Label id="dhj" verticalAlign="middle" height="25" textAlign="right" width="150">
+			
+		</s:Label>
+	</s:BorderContainer>
 	<s:TextArea id="desc" width="100%" height="40">
 		
 	</s:TextArea>
-	</s:BorderContainer>
-	<mx:Image id="pzimg" click="showbig()"  height="100%" >
-		
-	</mx:Image>
+	
 </s:BorderContainer>

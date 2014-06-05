@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" 
+						  xmlns:uicontrol="uicontrol.*"
+						  width="700" height="500" borderVisible="false" backgroundAlpha="0"  top="5" bottom="5" left="5" right="5"  >
+	<fx:Script>
+		<![CDATA[
+			import events.CloseEvent;
+			import events.PageChangeEvent;
+			
+			import httpcontrol.HttpServiceUtil;
+			
+			import mx.collections.ArrayCollection;
+            import mx.collections.ArrayList;
+            import mx.controls.Alert;
+			import mx.controls.Image;
+			import mx.core.FlexGlobals;
+			import mx.events.CollectionEvent;
+            import mx.events.DataGridEvent;
+            import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+            import mx.utils.ObjectUtil;
+
+            import uicontrol.BigImage;
+			import uicontrol.BigText;
+            import uicontrol.Confirm;
+            import uicontrol.PZEdit;
+            import uicontrol.RuleConfirm;
+
+            import util.ToolUtil;
+			
+			[Bindable]
+			private var taxlist:ArrayCollection=new ArrayCollection();
+			[Bindable]
+			private var rulelist:ArrayCollection=new ArrayCollection();
+
+			[Bindable]
+			private var ruleItemList:ArrayCollection=new ArrayCollection();
+
+
+			
+			override public   function  init(e:FlexEvent):void{
+                getTemplateList();
+
+				
+			}
+			override public function closeContainer(e:CloseEvent):void{
+				dispatchEvent(e);
+				
+			}
+
+            private function getTemplateList():void{
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTemplateList",getTemplateDataResult,"POST").send();
+            }
+            private  function getTemplateDataResult(result:Object,e:ResultEvent):void{
+                if(result.success){
+                    taxlist.removeAll();
+                    taxlist.addAll(new ArrayCollection(result.result as Array));
+                }
+            }
+
+            private var tempItem:Object=null;
+            private function selectTemplate():void{
+                if(taxtemplateGrid.selectedItem!=tempItem){
+                    var data:Object=new Object();
+                    data["templateid"]=taxtemplateGrid.selectedItem.id;
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList",getRuleDataResult,"POST").send(data);
+                    tempItem=taxtemplateGrid.selectedItem;
+                    taxImg.source = tempItem.imgurl;
+                }
+            }
+            private  function getRuleDataResult(result:Object,e:ResultEvent):void{
+                if(result.success){
+                    rulelist.removeAll();
+                    rulelist.addAll(new ArrayCollection(result.result as Array));
+                }
+            }
+
+            private function createTemplate():void{
+                var templateCreater:Confirm=Confirm(PopUpManager.createPopUp(
+                        this, Confirm , true) as spark.components.TitleWindow);
+                templateCreater.grid = taxtemplateGrid;
+                templateCreater.x=(this.width-templateCreater.width)/2;
+                templateCreater.y=(this.height-templateCreater.height)/2;
+            }
+
+            private function createRule():void{
+                if(!taxtemplateGrid.selectedItem){
+                    Alert.show("请选择一个票据模板","提示");
+                    return;
+                }
+                var templateCreater:RuleConfirm=RuleConfirm(PopUpManager.createPopUp(
+                        this, RuleConfirm , true) as spark.components.TitleWindow);
+                templateCreater.orderdata = taxtemplateGrid.selectedItem;
+                templateCreater.grid = taxtemplateRule;
+                templateCreater.x=(this.width-templateCreater.width)/2;
+                templateCreater.y=(this.height-templateCreater.height)/2;
+            }
+            private var ruleItem:Object=null;
+            private function selectRule():void{
+                if(taxtemplateRule.selectedItem!=ruleItem){
+                    var data:Object=new Object();
+                    data["ruleid"]=taxtemplateGrid.selectedItem.id;
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleItemByRuleList",getRuleItemDataResult,"POST").send(data);
+                    ruleItem=taxtemplateRule.selectedItem;
+                }
+            }
+            private  function getRuleItemDataResult(result:Object,e:ResultEvent):void{
+                if(result.success){
+                    ruleItemList.removeAll();
+                    ruleItemList.addAll(new ArrayCollection(result.result as Array));
+                }
+            }
+            private function templateUpdate(event:DataGridEvent):void{
+                var data:Object=taxlist.getItemAt(event.rowIndex);
+
+                if(taxtemplateGrid.itemEditorInstance.data[event.dataField]==taxtemplateGrid.itemEditorInstance[taxtemplateGrid.columns[event.columnIndex].editorDataField]){
+                    return;
+                }
+                data[event.dataField]=taxtemplateGrid.itemEditorInstance[taxtemplateGrid.columns[event.columnIndex].editorDataField];
+
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveTemplate",null,"POST").send(data);
+
+            }
+            private function ruleUpdate(event:DataGridEvent):void{
+                var data:Object=rulelist.getItemAt(event.rowIndex);
+                if(taxtemplateRule.itemEditorInstance.data[event.dataField]==taxtemplateRule.itemEditorInstance[taxtemplateRule.columns[event.columnIndex].editorDataField]){
+                    return;
+                }
+                data[event.dataField]=taxtemplateRule.itemEditorInstance[taxtemplateRule.columns[event.columnIndex].editorDataField];
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRule",null,"POST").send(data);
+            }
+
+            private function clickHander(e:ItemClickEvent):void{
+                if(e.label=="新增"){
+                    ruleitemgrid.addNewItem();
+
+                }
+                if(e.label=="删除"){
+                    del();
+
+                }
+                if(e.label=="保存"){
+
+                }
+                if(e.label=="刷新图片"){
+
+                }
+            }
+
+            public function del():void{
+                var userArr:Array=new Array();
+                var obj:Object;
+                var item:Object;
+                for(var i:int=ruleItemList.length-1;i>=0;i--){
+                    item=ruleItemList.getItemAt(i);
+                    if(!item.selected){
+                        continue;
+                    }
+                    if(item.hasOwnProperty("id")){
+                        userArr.push(item.id);
+                    }else{
+                        ruleItemList.removeItemAt(i);
+                    }
+                }
+                var data:Object=new Object();
+                data["ruleitemids"]=userArr;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/delRuleItemByids",delRuleItemByidsResult,"POST").send(data);
+                ruleitemgrid.invalidateList();
+            }
+
+            private function delRuleItemByidsResult(result:Object,event:ResultEvent):void{
+                if(result.success){
+                    var item:Object;
+                    for(var i:int=ruleItemList.length-1;i>=0;i--){
+                        item=ruleItemList.getItemAt(i);
+                        if(!item.selected){
+                            continue;
+                        }
+                        ruleItemList.removeItemAt(i);
+                    }
+                    ruleitemgrid.invalidateList();
+                }
+            }
+			
+
+			
+			[Bindable]
+			private var btnlist:ArrayCollection=new ArrayCollection([{'label':'新增','ico':addimg},{'label':'删除','ico':delimg},{'label':'保存','ico':saveimg},{'label':'刷新图片','ico':refreshimg}]);
+
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<!--  allowMultipleSelection="true"  -->
+	</fx:Declarations>
+	<s:HGroup gap="5" width="100%" height="100%">
+        <s:VGroup gap="4" width="250" height="100%" paddingTop="5" paddingLeft="5">
+            <s:HGroup gap="10" width="100%">
+                <s:Button label="添加新模板" click="createTemplate()" height="30"></s:Button>
+                <s:CheckBox label="表格内编辑修改" selected="false" id="boxEditTemp"></s:CheckBox>
+            </s:HGroup>
+            <mx:DataGrid width="100%" height="100%" id="taxtemplateGrid"  doubleClickEnabled="true" itemClick="selectTemplate()" editable="{boxEditTemp.selected}" itemEditEnd="templateUpdate(event)" dataProvider="{taxlist}">
+                <mx:columns>
+                    <mx:DataGridColumn headerText="票据模板" dataField="name" editable="true" sortable="false" ></mx:DataGridColumn>
+                </mx:columns>
+            </mx:DataGrid>
+            <s:HGroup gap="10" width="100%">
+                <s:Button label="添加新规则" click="createRule()" height="30"></s:Button>
+                <s:CheckBox label="表格内编辑修改" selected="false" id="boxEditRule"></s:CheckBox>
+            </s:HGroup>
+
+            <mx:DataGrid width="100%" height="300" id="taxtemplateRule" doubleClickEnabled="true" itemClick="selectRule()"  editable="{boxEditRule.selected}" itemEditEnd="ruleUpdate(event)" dataProvider="{rulelist}">
+                <mx:columns>
+                    <mx:DataGridColumn headerText="生成规则" dataField="name"  editable="true" ></mx:DataGridColumn>
+                </mx:columns>
+            </mx:DataGrid>
+        </s:VGroup>
+
+        <s:VGroup width="100%" height="100%">
+            <s:Image id="taxImg" x="0" y="0" height="100%"></s:Image>
+
+            <mx:ButtonBar dataProvider="{btnlist}" iconField="ico" height="30" itemClick="clickHander(event)">
+
+            </mx:ButtonBar>
+            <s:Scroller width="100%" height="300">
+                <s:Group width="100%" height="100%">
+                    <uicontrol:MarkAdvancedDataGrid id="ruleitemgrid"  dataProvider="{ruleItemList}"  isNewAdd="true" enabled="true" editable="true" minWidth="1000" height="100%">
+                        <uicontrol:groupedColumns>
+                            <mx:AdvancedDataGridColumn headerText="选择" dataField="selected"  sortable="false" width="60"  editorDataField="selected" rendererIsEditor="true" >
+                                <mx:itemRenderer>
+                                    <fx:Component>
+                                        <mx:HBox horizontalAlign="center">
+                                            <fx:Script>
+										<![CDATA[
+                                                public function get selected():Boolean{
+                                                    return cb.selected;
+                                                }
+                                                public function set selected(value:Boolean):void{
+                                                    cb.selected=value;
+                                                }
+                                                ]]>
+									</fx:Script>
+
+                                            <mx:CheckBox id="cb" selected="{data.selected}" >
+
+                                            </mx:CheckBox>
+                                        </mx:HBox>
+                                    </fx:Component>
+                                </mx:itemRenderer>
+                            </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="索引" dataField="index" width="60">
+                            </mx:AdvancedDataGridColumn>
+
+                            <mx:AdvancedDataGridColumn headerText="x轴" dataField="x" width="70">
+
+                            </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="y轴" dataField="y" width="70">
+
+                            </mx:AdvancedDataGridColumn>
+
+                            <mx:AdvancedDataGridColumn headerText="字体大小" dataField="size" width="100">
+
+                            </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="字体颜色" dataField="color" width="100">
+
+                            </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="字体类型" dataField="family" width="70">
+
+                            </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="文字内容" dataField="word" width="200">
+
+                            </mx:AdvancedDataGridColumn>
+
+                        </uicontrol:groupedColumns>
+
+                    </uicontrol:MarkAdvancedDataGrid>
+                </s:Group>
+            </s:Scroller>
+        </s:VGroup>
+	</s:HGroup>
+</control:CBorderContainer>
