@@ -42,6 +42,8 @@
 			private var ruleItemList:ArrayCollection=new ArrayCollection();
 
 
+            [Bindable]
+            public  var familylist:ArrayCollection=new ArrayCollection([{"id":1,"text":"仿宋"}]);
 			
 			override public   function  init(e:FlexEvent):void{
                 getTemplateList();
@@ -77,6 +79,8 @@
                 if(result.success){
                     rulelist.removeAll();
                     rulelist.addAll(new ArrayCollection(result.result as Array));
+                    ruleItemList.removeAll();
+                    ruleItem=null;
                 }
             }
 
@@ -104,7 +108,7 @@
             private function selectRule():void{
                 if(taxtemplateRule.selectedItem!=ruleItem){
                     var data:Object=new Object();
-                    data["ruleid"]=taxtemplateGrid.selectedItem.id;
+                    data["ruleid"]=taxtemplateRule.selectedItem.id;
                     HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleItemByRuleList",getRuleItemDataResult,"POST").send(data);
                     ruleItem=taxtemplateRule.selectedItem;
                 }
@@ -113,6 +117,8 @@
                 if(result.success){
                     ruleItemList.removeAll();
                     ruleItemList.addAll(new ArrayCollection(result.result as Array));
+
+                    taxImg.source ='/tax/showTaxImage?ruleid='+ruleItem.id+"&t="+new Date();
                 }
             }
             private function templateUpdate(event:DataGridEvent):void{
@@ -144,11 +150,11 @@
                     del();
 
                 }
-                if(e.label=="保存"){
-
-                }
+//                if(e.label=="保存"){
+//                    saveRuleItem();
+//                }
                 if(e.label=="刷新图片"){
-
+                    saveRuleItem();
                 }
             }
 
@@ -186,13 +192,63 @@
                     ruleitemgrid.invalidateList();
                 }
             }
-			
+
+            private function saveRuleItem():void{
+                if(taxtemplateRule.selectedItem){
+
+                    var data:Object=new Object();
+                    data["ruleid"] = taxtemplateRule.selectedItem.id;
+                    var obj:Object=null;
+                    for(var i:int=0;i<ruleItemList.length;i++){
+                        obj = ruleItemList.getItemAt(i);
+                        if(obj.hasOwnProperty("id")){
+                            data["id"+i]=obj.id;
+                        }
+                        obj.index = i+1;
+                        if(!obj.x&&!obj.y&&!obj.size&&obj.color===""&&!obj.family&&!obj.word){
+                            ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
+                            continue;
+                        }
+                        if(!obj.x||!obj.y||!obj.size||obj.color===""||!obj.family||!obj.word){
+                            Alert.show("请填写必要参数","警告");
+                            return;
+                        }
+                        data["index"+i]=obj.index;
+                        data["x"+i]=obj.x;
+                        data["y"+i]=obj.y;
+                        data["size"+i]=obj.size;
+                        data["color"+i]=Number(obj.color);
+                        data["family"+i]=obj.family;
+                        data["word"+i]=obj.word;
+                    }
+                    data['num']=ruleItemList.length;
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRuleItem",saveRuleItemResult,"POST").send(data);
+
+                }
+            }
+			private function saveRuleItemResult(result:Object,event:ResultEvent):void{
+                if(result.success){
+                    for(var i:int=0;i<ruleItemList.length;i++){
+                        ruleItemList.getItemAt(i)["id"]=result.result["ids"][i];
+                    }
+                    ruleitemgrid.invalidateList();
+                    taxImg.source ='/tax/showTaxImage?ruleid='+ruleItem.id+"&t="+new Date();
+                }
+            }
 
 			
 			[Bindable]
-			private var btnlist:ArrayCollection=new ArrayCollection([{'label':'新增','ico':addimg},{'label':'删除','ico':delimg},{'label':'保存','ico':saveimg},{'label':'刷新图片','ico':refreshimg}]);
+			private var btnlist:ArrayCollection=new ArrayCollection([{'label':'新增','ico':addimg},{'label':'删除','ico':delimg},{'label':'刷新图片','ico':refreshimg}]);
 
 
+        public function fontFamilyFun(item:Object, column:AdvancedDataGridColumn):String{
+            for each(var obj:Object in familylist){
+                if(obj.id==item.family){
+                    return obj.text;
+                }
+            }
+            return "";
+        }
 		]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -267,11 +323,111 @@
                             <mx:AdvancedDataGridColumn headerText="字体大小" dataField="size" width="100">
 
                             </mx:AdvancedDataGridColumn>
-                            <mx:AdvancedDataGridColumn headerText="字体颜色" dataField="color" width="100">
+                            <mx:AdvancedDataGridColumn headerText="字体颜色" dataField="color" rendererIsEditor="true" editorDataField="data"  width="100">
+                                <mx:itemRenderer>
+                                    <fx:Component>
+                                        <mx:HBox >
+                                            <fx:Script>
+                                            <![CDATA[
 
+                                                private var vv:Object;
+                                                override public function get data():Object{
+                                                    return vv;
+                                                }
+                                                override public function set data(v:Object):void{
+                                                    vv=v;
+                                                    if(v){
+                                                        colorPicker.selectedColor= Number(v["color"]);
+                                                    }
+
+                                                }
+
+                                                private function selectFontColor():void{
+                                                    vv["color"]=colorPicker.selectedColor;
+                                                }
+
+
+                                                ]]>
+                                            </fx:Script>
+                                            <mx:ColorPicker id="colorPicker" change="selectFontColor()"  color="#010000" selectedColor="#000000"
+                                                            symbolColor="#030002">
+
+                                            </mx:ColorPicker>
+                                     </mx:HBox>
+                                    </fx:Component>
+                                </mx:itemRenderer>
                             </mx:AdvancedDataGridColumn>
-                            <mx:AdvancedDataGridColumn headerText="字体类型" dataField="family" width="70">
+                            <mx:AdvancedDataGridColumn headerText="字体类型" dataField="family"  editorDataField="data" width="70" labelFunction="fontFamilyFun">
+                                <mx:itemEditor>
+                                    <fx:Component>
+                                        <mx:HBox implements="mx.controls.listClasses.IDropInListItemRenderer,mx.managers.IFocusManagerComponent">
+                                            <fx:Script>
+											<![CDATA[
+                                                import mx.collections.ArrayCollection;
+                                                import mx.controls.dataGridClasses.DataGridListData;
+                                                import mx.controls.listClasses.BaseListData;
+                                                import mx.core.INavigatorContent;
 
+                                                import util.InfoUtil;
+                                                private var _listData:DataGridListData;
+                                                // Define a property for returning the new value to the cell.
+                                                [Bindable]
+                                                private var _value:Object;
+
+
+
+                                                override public function drawFocus(draw:Boolean):void {
+                                                    //											outerDocument.getMacAll();
+                                                    cbo.setFocus();
+                                                    cbo.open();
+
+                                                }
+
+                                                override public function get data():Object {
+                                                    if(cbo==null){
+                                                        return super.data;
+                                                    }else{
+                                                        if(cbo.selectedIndex==-1){
+                                                            for each(var it:Object in cbo.dataProvider){
+                                                                if(it[cbo.labelField]==cbo.data||it[cbo.valueField]==cbo.data){
+                                                                    return it[cbo.valueField]
+                                                                }
+                                                            }
+                                                            return null;
+                                                        }
+                                                        return cbo.data;
+                                                    }
+                                                }
+
+                                                override public function set data(value:Object):void {
+                                                    super.data=value[_listData.dataField];
+                                                    _value=value;
+                                                    cbo.setValue(value[_listData.dataField]);
+
+                                                    //
+//													changeFilterValue();
+                                                }
+
+                                                public function get listData():BaseListData
+                                                {
+                                                    return _listData;
+                                                }
+
+                                                public function set listData(value:BaseListData):void
+                                                {
+                                                    _listData = DataGridListData(value);
+                                                    cbo.listData = DataGridListData(value);
+                                                }
+
+
+                                                ]]>
+										</fx:Script>
+                                            <uicontrol:FliterComboBox id="cbo"  dataProvider="{outerDocument.familylist}"   labelField="text" valueField="id"  height="{this.height}" width="{this.width}" styleName="fliterComboBox" dropdownWidth="200">
+
+                                            </uicontrol:FliterComboBox>
+                                        </mx:HBox>
+                                    </fx:Component>
+                                </mx:itemEditor>
                             </mx:AdvancedDataGridColumn>
                             <mx:AdvancedDataGridColumn headerText="文字内容" dataField="word" width="200">
 
