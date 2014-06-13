@@ -366,7 +366,7 @@
 								</s:Label>
 							</s:FormItem>
 							<s:FormItem label="业务编码:" textAlign="right">
-								<s:NumericStepper id="num"  width="200" minimum="1" maximum="9" value="3">
+								<s:NumericStepper id="num"  width="200" minimum="1" maximum="99" value="3">
 									
 								</s:NumericStepper>
 							</s:FormItem>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+						  xmlns:s="library://ns.adobe.com/flex/spark" 
+						  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" 
+						  xmlns:uicontrol="uicontrol.*"
+						  width="700" height="500" borderVisible="false" backgroundAlpha="0"  top="5" bottom="5" left="5" right="5"  >
+    <fx:Script>
+		<![CDATA[
+			import events.CloseEvent;
+			import events.PageChangeEvent;
+			
+			import httpcontrol.HttpServiceUtil;
+			
+			import mx.collections.ArrayCollection;
+            import mx.collections.ArrayList;
+            import mx.controls.Alert;
+			import mx.controls.Image;
+			import mx.core.FlexGlobals;
+			import mx.events.CollectionEvent;
+            import mx.events.DataGridEvent;
+            import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+            import mx.utils.ObjectUtil;
+
+            import uicontrol.BigImage;
+			import uicontrol.BigText;
+            import uicontrol.Confirm;
+            import uicontrol.PZEdit;
+            import uicontrol.RuleConfirm;
+
+            import util.ToolUtil;
+			
+			[Bindable]
+			private var taxlist:ArrayCollection=new ArrayCollection();
+			[Bindable]
+			private var rulelist:ArrayCollection=new ArrayCollection();
+
+			[Bindable]
+			private var ruleItemList:ArrayCollection=new ArrayCollection();
+
+
+            [Bindable]
+            public  var familylist:ArrayCollection=new ArrayCollection([{"id":1,"text":"仿宋"}]);
+			
+			override public   function  init(e:FlexEvent):void{
+
+				
+			}
+			override public function closeContainer(e:CloseEvent):void{
+				dispatchEvent(e);
+				
+			}
+
+        private function  ok1():void{
+            as1.visible=true;
+            n1.visible=true;
+        }
+        private function  ok2():void{
+            as2.visible=true;
+            n2.visible=true;
+        }
+        private function  ok3():void{
+            as3.visible=true;
+            n3.visible=true;
+        }
+        private function  gotoT2():void{
+            t1.visible=false;
+            t2.visible=true;
+            t3.visible=false;
+            t4.visible=false;
+        }
+        private function  gotoT3():void{
+            t1.visible=false;
+            t2.visible=false;
+            t3.visible=true;
+            t4.visible=false;
+        }
+        private function  gotoResult():void{
+            t1.visible=false;
+            t2.visible=false;
+            t3.visible=false;
+            t4.visible=true;
+        }
+
+        private function  gotoPZLR():void{
+            var url:String="http://192.168.101.17/htfsweb/j_spring_security_check?j_username=szht002&j_password=ht1111&htcsgl=htcsgl&htcsglztdm=4028e591452ba4b701452bac1b400005&htcsglqyid=f39c81c7403da1df01404cc56c550192&htcsglywrq=20140612&education=education";
+            var request:URLRequest=new URLRequest(url);
+            navigateToURL(request,"_blank");
+        }
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+		<!--  allowMultipleSelection="true"  -->
+	</fx:Declarations>
+	<s:VGroup id="t1" gap="5" width="100%" height="100%" paddingLeft="20" paddingTop="20" paddingRight="20">
+       <s:Label text="这张原始单据反映了以下哪种业务?" width="100%" maxDisplayedLines="-1">
+       </s:Label>
+        <s:Image source="/media/ti/1.jpg"></s:Image>
+        <s:VGroup paddingLeft="20" height="160" width="100%">
+            <s:HGroup width="100%" height="40">
+                <s:Label text="1."></s:Label>
+                <s:CheckBox label="收到客户银行电汇货款"></s:CheckBox>
+            </s:HGroup>
+            <s:HGroup width="100%" height="40">
+                <s:Label text="2."></s:Label>
+                <s:CheckBox label="收到甲股东现金认缴注册资本 ，入账公司银行账户"></s:CheckBox>
+            </s:HGroup>
+            <s:HGroup width="100%" height="40">
+                <s:Label text="3."></s:Label>
+                <s:CheckBox label="收到乙股东现金认缴注册资本，入账公司银行账户"></s:CheckBox>
+            </s:HGroup>
+            <s:HGroup width="100%" height="40">
+                <s:Label text="4."></s:Label>
+                <s:CheckBox label="收到甲股东转账支票认缴注册资金，入账公司银行账户"></s:CheckBox>
+            </s:HGroup>
+        </s:VGroup>
+        <s:HGroup width="100%" height="40"  horizontalAlign="right" paddingRight="20">
+
+            <s:Label id="as1" text="正确答案为：第4条"  visible="false"  color="red" fontSize="20"></s:Label>
+            <s:Button label="确认" click="ok1()" visible="{!n1.visible}" ></s:Button>
+            <s:Button id="n1" label="做完了，下一题" click="gotoT2()"  visible="false"></s:Button>
+        </s:HGroup>
+	</s:VGroup>
+    <s:VGroup id="t2" gap="5" width="100%" height="100%"  visible="false"  paddingLeft="20" paddingTop="20" paddingRight="20">
+        <s:Label text="根据下面这张票据，录入一张凭证" width="100%" maxDisplayedLines="-1">
+        </s:Label>
+        <s:Image source="/media/ti/2.jpg"></s:Image>
+        <s:VGroup paddingLeft="20" height="160" width="100%">
+            <s:HGroup width="100%" height="40">
+                <s:Button label="去录凭证" click="gotoPZLR()"></s:Button>
+            </s:HGroup>
+
+        </s:VGroup>
+        <s:HGroup width="100%" height="40"  horizontalAlign="right" paddingRight="20">
+
+            <s:Label id="as2" text="凭证正确"  visible="false"  color="red" fontSize="20"></s:Label>
+            <s:Button label="确认" click="ok2()"  visible="{!n2.visible}" ></s:Button>
+            <s:Button id="n2" label="做完了，下一题" click="gotoT3()"  visible="false"></s:Button>
+        </s:HGroup>
+    </s:VGroup>
+    <s:VGroup id="t3" gap="5" width="100%" height="100%"  visible="false"  paddingLeft="20" paddingTop="20" paddingRight="20">
+        <s:Label text="依据这张原始单据做会计凭证时，贷方计入以下哪个会计科目?" width="100%" maxDisplayedLines="-1">
+        </s:Label>
+        <s:Image source="/media/ti/2.jpg"></s:Image>
+        <s:VGroup paddingLeft="20" height="160" width="100%">
+            <s:HGroup width="100%" height="40">
+                <s:Label text="1."></s:Label>
+                <s:CheckBox label="银行存款"></s:CheckBox>
+            </s:HGroup>
+            <s:HGroup width="100%" height="40">
+                <s:Label text="2."></s:Label>
+                <s:CheckBox label="实收资本-甲"></s:CheckBox>
+            </s:HGroup>
+            <s:HGroup width="100%" height="40">
+                <s:Label text="3."></s:Label>
+                <s:CheckBox label="股本-甲"></s:CheckBox>
+            </s:HGroup>
+            <s:HGroup width="100%" height="40">
+                <s:Label text="4."></s:Label>
+                <s:CheckBox label="盈余公积"></s:CheckBox>
+            </s:HGroup>
+        </s:VGroup>
+        <s:HGroup width="100%" height="40" horizontalAlign="right" paddingRight="20">
+
+            <s:Label id="as3" text="正确答案为：第2条"  visible="false"  color="red" fontSize="20"></s:Label>
+            <s:Button label="确认" click="ok3()"  visible="{!n3.visible}" ></s:Button>
+            <s:Button id="n3" label="都做完了，查看结果" click="gotoResult()"  visible="false"></s:Button>
+        </s:HGroup>
+
+    </s:VGroup>
+
+    <s:VGroup id="t4" gap="5" width="100%" height="100%" visible="false"  paddingLeft="20" paddingTop="20" paddingRight="20">
+        <s:Label text="本次考试共做了3道题；2道正确，1道错误。望下次努力" color="red" fontSize="20" width="100%" maxDisplayedLines="-1">
+        </s:Label>
+
+
+    </s:VGroup>
+</control:CBorderContainer>

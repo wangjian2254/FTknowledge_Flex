@@ -16,7 +16,8 @@
 			import control.BusinessEdit;
 			import control.CBorderContainer;
 			import control.ChangePassword;
-			import control.KnowledgeEdit;
+            import control.KaoShiControl;
+            import control.KnowledgeEdit;
 			import control.KnowledgeQuery;
 			import control.LoginUser;
 			import control.RegisterUser;
@@ -260,6 +261,9 @@
                     case 'taximagecreate':
 						c=new TaxImageCreate();
 						break;
+                    case 'kaoshi':
+                        c=new KaoShiControl();
+                        break;
 					
 					
 				}
