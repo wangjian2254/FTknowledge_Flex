@@ -20,7 +20,9 @@
             import control.KnowledgeEdit;
 			import control.KnowledgeQuery;
 			import control.LoginUser;
-			import control.RegisterUser;
+            import control.PaperControl;
+            import control.RegisterUser;
+            import control.SubjectControl;
             import control.TaxImageCreate;
             import control.TaxKindEdit;
 			import control.TicketEdit;
@@ -263,6 +265,12 @@
 						break;
                     case 'kaoshi':
                         c=new KaoShiControl();
+                        break;
+                    case 'subject':
+                        c=new SubjectControl();
+                        break;
+                    case 'paper':
+                        c=new PaperControl();
                         break;
 					
 					
