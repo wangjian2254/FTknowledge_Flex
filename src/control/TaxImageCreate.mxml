@@ -209,7 +209,7 @@
                             ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
                             continue;
                         }
-                        if(!obj.x||!obj.y||!obj.size||obj.color===""||!obj.family||!obj.word){
+                        if(!obj.x||!obj.y||!obj.size||!obj.family||!obj.word){
                             Alert.show("请填写必要参数","警告");
                             return;
                         }
@@ -217,6 +217,9 @@
                         data["x"+i]=obj.x;
                         data["y"+i]=obj.y;
                         data["size"+i]=obj.size;
+                        if(isNaN(obj.color)){
+                            obj.color=0;
+                        }
                         data["color"+i]=Number(obj.color);
                         data["family"+i]=obj.family;
                         data["word"+i]=obj.word;

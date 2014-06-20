@@ -84,7 +84,6 @@ package uicontrol
 			return result;
 		}
 		private function initRow(e:CollectionEvent):void{
-			var o:Object=createRow();
 			var data:ArrayCollection=dataProvider as ArrayCollection;
 			if(!lastRow){
 				insertLastRow();

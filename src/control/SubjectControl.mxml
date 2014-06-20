@@ -9,13 +9,16 @@
 			import events.DelItemEvent;
 			
 			import httpcontrol.HttpServiceUtil;
-			
-			import mx.collections.ArrayCollection;
+
+            import json.JParser;
+
+            import mx.collections.ArrayCollection;
 			import mx.controls.Alert;
 			import mx.events.FlexEvent;
 			import mx.events.ItemClickEvent;
 			import mx.events.ListEvent;
-			import mx.rpc.events.ResultEvent;
+            import mx.managers.CursorManager;
+            import mx.rpc.events.ResultEvent;
 			
 			import uicontrol.DelItem;
 			
@@ -52,6 +55,20 @@
                     rulelist.addAll(new ArrayCollection(result.result as Array));
                 }
             }
+            private  function getRuleDataResult2(result:Object,e:ResultEvent):void{
+                if(result.success){
+                    rulelist.removeAll();
+                    rulelist.addAll(new ArrayCollection(result.result as Array));
+                    ruleItem=null;
+                    for each(var item:Object in rulelist){
+                        if(item.id==tempSubject['ruleid']){
+                            taxtemplateRule.selectedItem=item;
+                            selectRule();
+                            break;
+                        }
+                    }
+                }
+            }
 
             private var ruleItem:Object=null;
             private function selectRule():void{
@@ -67,7 +84,6 @@
 	            {'label': '刷新', 'ico': refreshimg, 'mode': 'refresh'},
 	            {'label': '新增', 'ico': wximg, 'mode': 'add'}
 	        ]);
-			private var state:String="refresh";//refresh(查询状态),add(新增状态),mod(修改状态)del(删除状态)
 	        [Bindable]
 	        private var subjectArr:ArrayCollection = new ArrayCollection([]);
 
@@ -77,11 +93,9 @@
 				ba1.requireSelection=true;
 				var item:Object=ba1.selectedItem;
 	            if (item.mode == 'refresh') {
-					state="refresh";
 					loadSubject();
 	            }
 				if (item.mode == 'add') {
-					state="add";
 					resetFormData();
 					delBtn.enabled=false;
 				}
@@ -98,7 +112,7 @@
 			}
 			private function loadSubDataResult(result:Object, e:ResultEvent):void {
 				if (result.success) {
-					resetFormData();
+//					resetFormData();
 					delBtn.enabled=false;
 					var arr:Array;
 					if(isPaging){
@@ -113,20 +127,28 @@
 					subjectArr.addAll(new ArrayCollection(arr));
 				}
 			}
+            private var tempSubject:Object;
 			private function savSubject():void{
 				if(!isValid()){
 					return;
 				}
 				var o:Object=getFormData();
+                tempSubject=o;
 				HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateSubject", savSubjectDataResult, "POST").send(o);
 			}
 			private function savSubjectDataResult(result:Object, e:ResultEvent):void {
 				if (result.success) {
 					loadSubject();
+                    tempSubject['id']=result.result;
+
+                    var data:Object={};
+                    data["sid"]=tempSubject["id"];
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/getOptionBySubject", getOptionBySubjectResult, "POST").send(data);
+
+
 				}
 			}
 			private function delSubject():void{
-				state="del";
 				Alert.show("是否删除","提示",Alert.YES|Alert.NO,null,function(e:mx.events.CloseEvent):void{
 					if(e.detail==Alert.YES){
 						var o:Object=getFormData();
@@ -136,6 +158,7 @@
 			}
 			private function delSubjectDataResult(result:Object, e:ResultEvent):void {
 				if (result.success) {
+                    resetFormData();
 					loadSubject();
 				}
 			}
@@ -154,6 +177,7 @@
 					dp.removeItemAt(optionGrid.selectedIndex);
 				}
 			}
+
 			private function resetFormData():void{
 				title.text="";
 
@@ -163,20 +187,30 @@
 					optionGrid.dataProvider.removeAll();
 				}
 				bz.text="";
+                taxtemplateRule.selectedItem=null;
+
+                imgTax.source=null;
+                tempSubject=null;
+
+
 			}
 			private function getFormData():Object{
 				var o:Object={};
 				var n:Object=subjectGrid.selectedItem;
-				if((state=="mod"||state=="del")&&n){
-					o["id"]=n["id"];
-				}
-				if(state=="add"){
-					o["id"]=null;
-				}
-				if((state=="add"||state=="del"||state=="refresh"||state=="mod")&&!n){
-					o["id"]=null;
-				}
+                if(tempSubject!=null&&tempSubject.hasOwnProperty("id")){
+                    o['id']=tempSubject['id'];
+                }else{
+                    o['id']="";
+                }
+
 				o["title"]=title.text;
+				o["type"]=typeRaido.selectedValue;
+                if(taxtemplateRule.selectedItem){
+                    o["rule"]=taxtemplateRule.selectedItem.id;
+                }else{
+                    o["rule"]="";
+                }
+
 
 				o["bz"]=bz.text;
 				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
@@ -187,12 +221,11 @@
 			private function setFormData(o:Object):void{
 				title.text=o["title"];
 				bz.text=o["bz"];
-				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-				dp.removeAll();
-				var optiosArr:Array= o["options"] is Array?o["options"]:[];
-				dp.addAll(new ArrayCollection(o["options"]));
-				var subKinds:Array = o["kinds"] is Array?o["kinds"]:[];
-				var isFind:Boolean=false;
+                typeRaido.selectedValue=o['type'];
+//				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
+//				dp.removeAll();
+//				var optiosArr:Array= o["options"] is Array?o["options"]:[];
+//				dp.addAll(new ArrayCollection(o["options"]));
 
 			}
 			private function isValid():Boolean{
@@ -202,7 +235,7 @@
 					return false;
 				}
 
-				if(optionGrid.dataProvider.length<=1){
+				if(typeRaido.selectedValue==1&&optionGrid.dataProvider.length<=1){
 					Alert.show("选项不能为空","提示");
 					return false;
 				}
@@ -226,10 +259,41 @@
 				ba1.requireSelection=false;
 				ba1.selectedIndex=-1;
 				var o:Object=subjectGrid.selectedItem;
-				state="mod";
+				tempSubject=o;
 				setFormData(o);
 				delBtn.enabled=true;
-			}
+
+                var data:Object={};
+                data["sid"]=o["id"];
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getOptionBySubject", getOptionBySubjectResult, "POST").send(data);
+
+            }
+
+            private function getOptionBySubjectResult(result:Object,e:ResultEvent):void{
+                if(result.success){
+                    tempSubject['options']=result.result['options'];
+                    tempSubject['templateid']=result.result['templateid'];
+                    tempSubject['ruleid']=result.result['ruleid'];
+                    optionGrid.dataProvider = new ArrayCollection(tempSubject['options']);
+                    for each(var item:Object in taxlist){
+                        if(item.id==tempSubject['templateid']){
+                            taxtemplateGrid.selectedItem=item;
+                            break;
+                        }
+                    }
+
+                    if(tempSubject['templateid']){
+                        var data:Object=new Object();
+                        data["templateid"]=tempSubject['templateid'];
+                        HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList",getRuleDataResult2,"POST").send(data);
+                    }else{
+                        taxtemplateRule.selectedItem=null;
+                        imgTax.source=null;
+                    }
+
+
+                }
+            }
 
 	        override public function init(e:FlexEvent):void {
 				optionGrid.dataProvider=new ArrayCollection();
@@ -241,16 +305,16 @@
 
 	
 	        override public function closeContainer(e:CloseEvent):void {
-	
+                dispatchEvent(e);
 	        }
 	
 
 	
 			protected function optionGrid_optionHandler(event:AutoGridEvent):void
 			{	
-				var data:Object=event.data;
+				var data:Object=event.data.item;
 				if(event.type==AutoGridEvent.DELETE){
-					if(!data["id"]||data["id"]==""){
+					if(!data["id"]){
 						var dataProvider:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
 						dataProvider.removeItemAt(data.rowIndex);
 					}else{
@@ -263,17 +327,22 @@
             if(typeRaido.selectedValue==2){
                 content3.visible=false;
                 content3.height=0;
-                content4.visible=true;
-                content4.height=250;
+
 
             }
             if(typeRaido.selectedValue==1){
-                content4.visible=false;
-                content4.height=0;
                 content3.visible=true;
                 content3.height=150;
             }
             formSubject.invalidateSize();
+        }
+
+        private function typeShow(item:Object, column:DataGridColumn):String{
+            if(item.type==1){
+                return "选择题";
+            }else{
+                return "凭证题";
+            }
         }
 
         ]]>
@@ -315,7 +384,7 @@
 						<mx:DataGridColumn headerText="题目" dataField="title">
 							
 						</mx:DataGridColumn>
-						<mx:DataGridColumn headerText="正确率" dataField="accuracy">
+						<mx:DataGridColumn headerText="类型" dataField="type" width="70" labelFunction="typeShow">
 							
 						</mx:DataGridColumn>
 					</mx:columns>
@@ -371,7 +440,7 @@
                                 </uicontrol:columns>
                             </uicontrol:AutoGrid>
                         </s:FormItem>
-                        <s:FormItem width="80%" id="content4"  label="票据:" height="250">
+                        <s:FormItem width="80%"  label="票据:" height="250">
                             <s:layout>
                                 <s:HorizontalLayout gap="10" horizontalAlign="left"></s:HorizontalLayout>
                             </s:layout>
@@ -397,9 +466,7 @@
                             <s:Button id="delBtn" label="删除" height="25"  enabled="false" click="delSubject();">
                             </s:Button>
                         </mx:ControlBar>
-                        <s:FormItem width="80%"   label="图片:" >
-                            <s:Button height="25" label="选择图片"></s:Button>
-                        </s:FormItem>
+
                         <s:FormItem width="100%" height="400">
                             <s:Image id="imgTax" height="400"></s:Image>
                         </s:FormItem>
@@ -410,4 +477,5 @@
 
 		</s:BorderContainer>
 	</s:BorderContainer>
+
 </control:CBorderContainer>

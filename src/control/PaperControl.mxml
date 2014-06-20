@@ -4,223 +4,280 @@
 						  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" width="700" height="700" borderVisible="false" backgroundAlpha="0" xmlns:uicontrol="uicontrol.*">
 	<fx:Script>
 		<![CDATA[
-			import events.AutoGridEvent;
-			import events.CloseEvent;
-			import events.DelItemEvent;
-			
-			import httpcontrol.HttpServiceUtil;
-			
-			import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
-			import mx.events.FlexEvent;
-			import mx.events.ItemClickEvent;
-			import mx.events.ListEvent;
-			import mx.rpc.events.ResultEvent;
-			
-			import uicontrol.DelItem;
-			
-			import util.DataUtil;
+        import events.AutoGridEvent;
+        import events.CloseEvent;
+        import events.DelItemEvent;
+
+        import httpcontrol.HttpServiceUtil;
+
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.events.FlexEvent;
+        import mx.events.ItemClickEvent;
+        import mx.events.ListEvent;
+        import mx.rpc.events.ResultEvent;
+
+        import uicontrol.DelItem;
+
+        import util.DataUtil;
 
 
+        [Bindable]
+        private var buttonArr1:ArrayCollection = new ArrayCollection([
+            {'label': '刷新', 'ico': refreshimg, 'mode': 'refresh'},
+            {'label': '新增', 'ico': wximg, 'mode': 'add'}
+        ]);
+
+        private var tempPaper:Object;
+        [Bindable]
+        private var paperArr:ArrayCollection = new ArrayCollection([]);
+        [Bindable]
+        private var paperSubjectArr:ArrayCollection = new ArrayCollection([]);
+        [Bindable]
+        private var allSubjectArr:ArrayCollection = new ArrayCollection([]);
+
+        //新增，保存，删除,回复，转发的处理函数
+        //多个按钮点击事件的处理函数
+        private function clickHander(e:MouseEvent):void {
+            ba1.requireSelection = true;
+            var item:Object = ba1.selectedItem;
+            if (item.mode == 'refresh') {
+                loadPaper();
+            }
+            if (item.mode == 'add') {
+                resetFormData();
+                delBtn.enabled = false;
+            }
+
+        }
+
+        private var isPaging:Boolean = true;
+
+        private function loadPaper():void {
+            var o:Object = {};//如果需要补齐查询参数
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllPaper", loadPaperDataResult, "POST").send(o);
+        }
+
+        private function loadPaperDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                var arr:Array;
+                if (isPaging) {
+                    pagebar1.mPageSize = result.result.limit;
+                    pagebar1.RecordCount = result.result.total;
+                    pagebar1.initPage();
+
+                }
+                arr = result.result.result;
+                paperArr = new ArrayCollection(arr);
+                paperArr.filterFunction = filterSubjectTitle;
+            }
+        }
+
+        private function loadSubject():void {
+            var o:Object = {};//如果需要补齐查询参数
+            o["kind"] = "";
+            var url:String = o["kind"] || o["kind"] == "" ? "/tax/getSubjectAll" : "/tax/getSubjectByKind";
+            HttpServiceUtil.getCHTTPServiceAndResult(url, loadSubDataResult, "POST").send(o);
+        }
+
+        private function loadSubDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                delBtn.enabled = false;
+                var arr:Array;
+
+                arr = result.result.result is Array ? result.result.result : [];
+
+                allSubjectArr = new ArrayCollection(arr);
+                allSubjectArr.filterFunction = filterSubjectTitle;
+            }
+        }
+
+        private function filterSubjectTitle(item:Object):Boolean {
+
+            if (searchInput.text || item.title.indexOf(searchInput.text))
+                return true;
+            else
+                return false;
+
+        }
+
+        private function filterSubject():void {
+            allSubjectArr.refresh();
+        }
+
+        private function savePaper():void {
+            if (!isValid()) {
+                return;
+            }
+            var o:Object = getFormData();
+            tempPaper = o;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/updatePaper", savePaperDataResult, "POST").send(o);
+        }
+
+        private function savePaperDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                loadPaper();
+                tempPaper['id'] = result.result;
+            }
+        }
+
+        private function delPaper():void {
+
+            Alert.show("是否删除?", "提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
+                if (e.detail == Alert.YES) {
+                    var o:Object = getFormData();
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/delPaper", delPaperDataResult, "POST").send(o);
+                }
+            });
+        }
+
+        private function delPaperDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                loadPaper();
+                resetFormData();
+            }
+        }
+
+        private function resetFormData():void {
+            title.text = "";
+            content.text = "";
+            ztdm.text = "";
+            paperSubjectArr.removeAll();
+            tempPaper=null;
 
 
-            [Bindable]
-	        private var buttonArr1:ArrayCollection = new ArrayCollection([
-	            {'label': '刷新', 'ico': refreshimg, 'mode': 'refresh'},
-	            {'label': '新增', 'ico': wximg, 'mode': 'add'}
-	        ]);
-			private var state:String="refresh";//refresh(查询状态),add(新增状态),mod(修改状态)del(删除状态)
-	        [Bindable]
-	        private var subjectArr:ArrayCollection = new ArrayCollection([]);
+        }
 
-	        //新增，保存，删除,回复，转发的处理函数
-	        //多个按钮点击事件的处理函数
-	        private function clickHander(e:MouseEvent):void {
-				ba1.requireSelection=true;
-				var item:Object=ba1.selectedItem;
-	            if (item.mode == 'refresh') {
-					state="refresh";
-					loadSubject();
-	            }
-				if (item.mode == 'add') {
-					state="add";
-					resetFormData();
-					delBtn.enabled=false;
-				}
-	
-	        }
+        private function getFormData():Object {
+            var o:Object = {};
+            var n:Object = paperGrid.selectedItem;
+            if (tempPaper != null && tempPaper.hasOwnProperty('id')) {
+                o['id'] = tempPaper['id'];
+            } else {
+                o['id'] = ''
+            }
+            o["title"] = title.text;
+            o["content"] = content.text;
+            o["is_pub"] = is_pub.selected;
+            o["right_ztdm"] = ztdm.text;
+            return o;
+        }
 
-			private var isPaging:Boolean;
-			private function loadSubject():void{
-				var o:Object={};//如果需要补齐查询参数
-				o["kind"]="";
-				var url:String= o["kind"]||o["kind"]==""? "/tax/getSubjectAll":"/tax/getSubjectByKind";
-				isPaging= !o["kind"]||o["kind"]==""?true:false;
-				HttpServiceUtil.getCHTTPServiceAndResult(url, loadSubDataResult, "POST").send(o);
-			}
-			private function loadSubDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-					resetFormData();
-					delBtn.enabled=false;
-					var arr:Array;
-					if(isPaging){
-						pagebar1.mPageSize = result.result.limit;
-						pagebar1.RecordCount = result.result.total;
-						pagebar1.initPage();
-						arr= result.result.result is Array ?  result.result.result : [];
-					}else{
-						arr= result.result.result is Array ?  result.result.result : [];
-					}
-					subjectArr.removeAll();
-					subjectArr.addAll(new ArrayCollection(arr));
-				}
-			}
-			private function savSubject():void{
-				if(!isValid()){
-					return;
-				}
-				var o:Object=getFormData();
-				HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateSubject", savSubjectDataResult, "POST").send(o);
-			}
-			private function savSubjectDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-					loadSubject();
-				}
-			}
-			private function delSubject():void{
-				state="del";
-				Alert.show("是否删除","提示",Alert.YES|Alert.NO,null,function(e:mx.events.CloseEvent):void{
-					if(e.detail==Alert.YES){
-						var o:Object=getFormData();
-						HttpServiceUtil.getCHTTPServiceAndResult("/tax/delSubject", delSubjectDataResult, "POST").send(o);
-					}
-				});
-			}
-			private function delSubjectDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-					loadSubject();
-				}
-			}
-			private function delOption():void{
-				Alert.show("是否删除","提示",Alert.YES|Alert.NO,null,function(e:mx.events.CloseEvent):void{
-					if(e.detail==Alert.YES){
-						var o:Object={};
-						o["id"]=optionGrid.selectedItem["id"];
-						HttpServiceUtil.getCHTTPServiceAndResult("/tax/delOption", delOptionDataResult, "POST").send(o);
-					}
-				});
-			}
-			private function delOptionDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-					var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-					dp.removeItemAt(optionGrid.selectedIndex);
-				}
-			}
-			private function resetFormData():void{
-				title.text="";
-
-				if(optionGrid.dataProvider==null){
-					optionGrid.dataProvider=new ArrayCollection();
-				}else{
-					optionGrid.dataProvider.removeAll();
-				}
-				bz.text="";
-			}
-			private function getFormData():Object{
-				var o:Object={};
-				var n:Object=subjectGrid.selectedItem;
-				if((state=="mod"||state=="del")&&n){
-					o["id"]=n["id"];
-				}
-				if(state=="add"){
-					o["id"]=null;
-				}
-				if((state=="add"||state=="del"||state=="refresh"||state=="mod")&&!n){
-					o["id"]=null;
-				}
-				o["title"]=title.text;
-
-				o["bz"]=bz.text;
-				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-				var arr:Array=(dp.toArray()).slice(0,dp.length-1);
-				DataUtil.serializationArr("mx_internal","option_",o,arr);
-				return o;
-			}
-			private function setFormData(o:Object):void{
-				title.text=o["title"];
-				bz.text=o["bz"];
-				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-				dp.removeAll();
-				var optiosArr:Array= o["options"] is Array?o["options"]:[];
-				dp.addAll(new ArrayCollection(o["options"]));
-				var subKinds:Array = o["kinds"] is Array?o["kinds"]:[];
-				var isFind:Boolean=false;
-
-			}
-			private function isValid():Boolean{
-				var o:Object=getFormData();
-				if(o["title"]==""){
-					Alert.show("题目不能为空","提示");
-					return false;
-				}
-
-				if(optionGrid.dataProvider.length<=1){
-					Alert.show("选项不能为空","提示");
-					return false;
-				}
-				var arr:Array=optionGrid.dataProvider.toArray();
-				for(var i:int;i<(arr.length-2);i++){
-					if(arr[i]["content"]==""){
-						Alert.show("选项内容不能为空","提示");
-						return false;
-					}
-					if(arr[i]["is_right"]!=true){
-						arr[i]["is_right"]=false;
-					}
-				}
-				if(o["bz"]==""){
-					Alert.show("备注不能为空","提示");
-					return false;
-				}
-				return true;
-			}
-			private function seletSubjec():void{
-				ba1.requireSelection=false;
-				ba1.selectedIndex=-1;
-				var o:Object=subjectGrid.selectedItem;
-				state="mod";
-				setFormData(o);
-				delBtn.enabled=true;
-			}
-
-	        override public function init(e:FlexEvent):void {
-				optionGrid.dataProvider=new ArrayCollection();
-				loadSubject();
-	        }
-	
-
-	
-	        override public function closeContainer(e:CloseEvent):void {
-	
-	        }
-	
-
-	
-			protected function optionGrid_optionHandler(event:AutoGridEvent):void
-			{	
-				var data:Object=event.data;
-				if(event.type==AutoGridEvent.DELETE){
-					if(!data["id"]||data["id"]==""){
-						var dataProvider:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-						dataProvider.removeItemAt(data.rowIndex);
-					}else{
-						delOption();
-					}
-				}
-			}
+        private function setFormData(o:Object):void {
+            title.text = o["title"];
+            content.text = o["content"];
+            is_pub.selected = o["is_pub"];
+            ztdm.text = o["right_ztdm"];
 
 
+        }
 
+        private function isValid():Boolean {
+            var o:Object = getFormData();
+            if (o["title"] == "") {
+                Alert.show("题目不能为空", "提示");
+                return false;
+            }
+
+
+            if (o["content"] == "") {
+                Alert.show("备注不能为空", "提示");
+                return false;
+            }
+            return true;
+        }
+
+        private function seletPaper():void {
+            ba1.requireSelection = false;
+            ba1.selectedIndex = -1;
+            var o:Object = paperGrid.selectedItem;
+            tempPaper = o;
+            setFormData(o);
+            delBtn.enabled = true;
+            var data:Object = new Object();
+            data['pid'] = o['id'];
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getSubjectByPaper", getSubjectByPaperResult, "POST").send(data);
+
+        }
+
+        private function getSubjectByPaperResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                paperSubjectArr = new ArrayCollection(result.result as Array);
+            }
+        }
+
+        private function seletSubjec(f:Boolean):void {
+            if(!tempPaper.hasOwnProperty('id')){
+                Alert.show("请先保存试卷。");
+                return;
+            }
+            if(f){
+                Alert.show("是否删除:"+paperSubjectGrid.selectedItem.title,"提示",Alert.YES|Alert.NO,null,function(e:mx.events.CloseEvent):void{
+                    if(e.detail==Alert.YES){
+                        var o:Object={};
+                        o['pid']=tempPaper.id;
+                        o["sid"]=paperSubjectGrid.selectedItem["id"];
+                        o['do']='del';
+
+                        HttpServiceUtil.getCHTTPServiceAndResult("/tax/doPaperSubject", doPaperSubjectDelResult, "POST").send(o);
+                    }
+                });
+            }else{
+                var o:Object=new Object();
+                o['pid']=tempPaper.id;
+                o["sid"]=allSubjectGrid.selectedItem["id"];
+                o['do']='add';
+
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/doPaperSubject", doPaperSubjectAddResult, "POST").send(o);
+            }
+        }
+
+        private function doPaperSubjectDelResult(result:Object,e:ResultEvent):void{
+            if(result.success){
+                if(paperSubjectGrid.selectedItem.id==result.result){
+                    paperSubjectArr.removeItemAt(paperSubjectArr.getItemIndex(paperSubjectGrid.selectedItem));
+                }else{
+                    seletPaper();
+                }
+            }
+        }
+
+        private function doPaperSubjectAddResult(result:Object,e:ResultEvent):void{
+            if(result.success){
+                if(allSubjectGrid.selectedItem.id==result.result){
+                    paperSubjectArr.addItem(allSubjectGrid.selectedItem);
+                }else{
+
+                    seletPaper();
+                }
+            }
+        }
+
+        override public function init(e:FlexEvent):void {
+            loadSubject();
+            loadPaper();
+
+        }
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+        }
+
+        private function typeShow(item:Object, column:DataGridColumn):String {
+            if (item.type == 1) {
+                return "选择题";
+            } else {
+                return "凭证题";
+            }
+        }
+
+        private function pubShow(item:Object, column:DataGridColumn):String {
+            if (item.type) {
+                return "发布";
+            } else {
+                return "未发布";
+            }
+        }
         ]]>
 	</fx:Script>
 	<fx:Declarations>
@@ -251,18 +308,18 @@
 				</s:HorizontalLayout>
 			</s:layout>
 			<s:VGroup height="100%" width="430" >
-				<mx:DataGrid id="subjectGrid" height="100%" width="100%" dataProvider="{subjectArr}" itemClick="seletSubjec();">
+				<mx:DataGrid id="paperGrid" height="100%" width="100%" dataProvider="{paperArr}" itemClick="seletPaper();">
 					<mx:columns>
 						<mx:DataGridColumn headerText="试卷" dataField="title">
 							
 						</mx:DataGridColumn>
-						<mx:DataGridColumn headerText="是否发布" dataField="accuracy">
+						<mx:DataGridColumn headerText="是否发布" dataField="is_pub" labelFunction="pubShow">
 							
 						</mx:DataGridColumn>
 					</mx:columns>
 				</mx:DataGrid>
-				<uicontrol:Pageing id="pagebar1" infolbl="false">
-				</uicontrol:Pageing>
+                <uicontrol:Pageing id="pagebar1" infolbl="false">
+                </uicontrol:Pageing>
 			</s:VGroup>
 			<s:Scroller width="100%" height="100%">
                 <s:Group width="100%" height="100%">
@@ -271,62 +328,58 @@
                             <s:TextInput id="title"  width="100%" prompt="标题" >
                             </s:TextInput>
                         </s:FormItem>
-                        <s:FormItem label="试卷介绍:" width="80%" height="70">
-                            <s:TextArea id="content" height="50" width="100%" prompt="备注:">
+                        <s:FormItem label="试卷介绍:" width="80%" height="150">
+                            <s:TextArea id="content" height="150" width="100%" prompt="试卷介绍">
                             </s:TextArea>
                         </s:FormItem>
-                        <s:FormItem width="80%" id="content3"  label="选项:" height="150">
-                            <uicontrol:AutoGrid editable="true" width="100%" id="optionGrid" height="150" autoDelete="optionGrid_optionHandler(event)"  sortableColumns="false">
-                                <uicontrol:columns>
-                                    <mx:DataGridColumn headerText="选项内容" dataField="content" textAlign="left">
-                                    </mx:DataGridColumn>
-                                    <mx:DataGridColumn headerText="是否正确" dataField="is_right" width="70" editable="false">
-                                        <mx:itemRenderer>
-                                            <fx:Component>
-                                                <mx:Canvas width="100%">
-                                                    <mx:VBox horizontalAlign="center" width="100%">
-                                                        <fx:Script>
-															<![CDATA[
-                                                            import mx.events.ListEvent;
-                                                            private var _data:Object;
-                                                            override public function set data(o:Object):void{
-                                                                _data=o;
-                                                                is_right.selected=o["is_right"];
-                                                            }
-                                                            private function clickHandler():void{
-                                                                _data["is_right"]=is_right.selected;
-                                                                dispatchEvent(new ListEvent(ListEvent.ITEM_CLICK,false,false,-1,-1,null,this));
-                                                            }
-                                                            ]]>
-														</fx:Script>
-                                                        <mx:CheckBox id="is_right" click="clickHandler()">
-                                                        </mx:CheckBox>
-                                                    </mx:VBox>
-                                                </mx:Canvas>
-                                            </fx:Component>
-                                        </mx:itemRenderer>
-                                    </mx:DataGridColumn>
-                                </uicontrol:columns>
-                            </uicontrol:AutoGrid>
-                        </s:FormItem>
-
-
-                        <s:FormItem label="备注" width="80%" height="70">
-                            <s:TextArea id="bz" height="50" width="100%" prompt="备注:">
-                            </s:TextArea>
+                        <s:FormItem label="是否发布:" width="80%" >
+                            <s:CheckBox id="is_pub" label="是否发布" selected="true"></s:CheckBox>
                         </s:FormItem>
                         <mx:ControlBar>
-                            <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25" click="savSubject();">
+                            <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25" click="savePaper();">
                             </s:Button>
-                            <s:Button id="delBtn" label="删除" height="25"  enabled="false" click="delSubject();">
+                            <s:Button id="delBtn" label="删除" height="25"  enabled="false" click="delPaper();">
                             </s:Button>
+                            <s:Button id="ztdmButton" label="设置标准答案" height="25"  enabled="false" click="delPaper();">
+                            </s:Button>
+                            <s:TextInput visible="false" id="ztdm" ></s:TextInput>
                         </mx:ControlBar>
-                        <s:FormItem width="80%"   label="图片:" >
-                            <s:Button height="25" label="选择图片"></s:Button>
+                        <s:FormItem width="80%" id="content3"  label="试题:">
+                            <s:layout>
+                                <s:HorizontalLayout gap="10" horizontalAlign="left"></s:HorizontalLayout>
+                            </s:layout>
+                            <mx:DataGrid id="paperSubjectGrid" height="700" width="100%" doubleClickEnabled="true" dataProvider="{paperSubjectArr}" itemDoubleClick="seletSubjec(true);">
+                                <mx:columns>
+                                    <mx:DataGridColumn headerText="题目" dataField="title" textAlign="left">
+
+                                    </mx:DataGridColumn>
+                                    <mx:DataGridColumn headerText="类型" dataField="type" width="60" textAlign="left" labelFunction="typeShow">
+
+                                    </mx:DataGridColumn>
+
+                                </mx:columns>
+                            </mx:DataGrid>
+                            <s:VGroup  height="700" width="100%">
+                                <s:TextInput id="searchInput"   width="100%" prompt="过滤" change="filterSubject()" >
+                                </s:TextInput>
+                                <mx:DataGrid id="allSubjectGrid" height="100%" width="100%" doubleClickEnabled="true" dataProvider="{allSubjectArr}" itemDoubleClick="seletSubjec(false);">
+                                    <mx:columns>
+                                        <mx:DataGridColumn headerText="题目" dataField="title"  textAlign="left">
+
+                                        </mx:DataGridColumn>
+                                        <mx:DataGridColumn headerText="类型" dataField="type"  width="60"  textAlign="left" labelFunction="typeShow">
+
+                                        </mx:DataGridColumn>
+
+                                    </mx:columns>
+                                </mx:DataGrid>
+                            </s:VGroup>
                         </s:FormItem>
-                        <s:FormItem width="100%" height="400">
-                            <s:Image id="imgTax" height="400"></s:Image>
-                        </s:FormItem>
+
+
+
+
+
                     </s:Form>
                 </s:Group>
 			</s:Scroller>
