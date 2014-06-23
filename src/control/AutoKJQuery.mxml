@@ -1,403 +1,416 @@
 <?xml version="1.0" encoding="utf-8"?>
-<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
-						  xmlns:s="library://ns.adobe.com/flex/spark" 
-						  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" 
-						  xmlns:uicontrol="uicontrol.*"
-						  width="700" height="500" borderVisible="false" backgroundAlpha="0">
-	<fx:Script>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                          xmlns:s="library://ns.adobe.com/flex/spark"
+                          xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*"
+                          width="700" height="500" borderVisible="false" backgroundAlpha="0">
+    <fx:Script>
 		<![CDATA[
-			import events.CloseEvent;
-			import events.PageChangeEvent;
-			
-			import httpcontrol.HttpServiceUtil;
-			
-			import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
-			import mx.controls.Image;
-			import mx.core.FlexGlobals;
-			import mx.events.CollectionEvent;
-			import mx.events.FlexEvent;
-			import mx.events.ItemClickEvent;
-			import mx.managers.PopUpManager;
-			import mx.rpc.events.FaultEvent;
-			import mx.rpc.events.ResultEvent;
-			
-			import uicontrol.BigImage;
-			import uicontrol.BigText;
-			import uicontrol.PZEdit;
-			
-			import util.ToolUtil;
-			
-			[Bindable]
-			private var businessList:ArrayCollection=new ArrayCollection();
-			[Bindable]
-			private var kjkmList:ArrayCollection=new ArrayCollection();
-			[Bindable]
-			private var kjzdList:ArrayCollection=new ArrayCollection();
-			[Bindable]
-			private var ruleList:ArrayCollection=new ArrayCollection();
-			[Bindable]
-			private var sfList:ArrayCollection=new ArrayCollection();
-			[Bindable]
-			private var ticketTreeList:ArrayCollection=new ArrayCollection();
-			[Bindable]
-			private var ticketList:ArrayCollection=new ArrayCollection();
-			private var ticketAllList:ArrayCollection=new ArrayCollection();
-			
-			[Bindable]
-			private var kjzd:String="";
-			[Bindable]
-			private var sf:String="";
-			[Bindable]
-			private var ssts:String="";
-			
-			override public   function  init(e:FlexEvent):void{
-				
-				changehy();
-				
-				
-			}
-			override public function closeContainer(e:CloseEvent):void{
-				dispatchEvent(e);
-				
-			}
+        import events.CloseEvent;
+        import events.PageChangeEvent;
 
-			private function changehy():void{
-				imglist.removeAllElements();
-				var obj:Object = new Object();
-				obj["ruleid"]=hy.selectedItem.id;
-				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTicketByUserRule",getTicketByRuleResult,"POST").send(obj);
-				
-			}
-			
-			
-			private function getTicketByRuleResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					ticketTreeList=new ArrayCollection(result.result.kindlist as Array);
-					ticketAllList=new ArrayCollection(result.result.kindalllist as Array);
-					ticketAllList.filterFunction=filterData;
-					changeTicket();
-					businessList.removeAll();
-					
-					sf="";
-					ssts="";
-					kjzd="";
-					pzlist.removeAllElements();
-				}
-			}
-			private function getBusinessByRuleResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					businessList=new ArrayCollection(result.result as Array);
-					businessTree.validateNow();
-					for each(var item:Object in businessList){
-						businessTree.expandChildrenOf(item,true);
-						
-					}
-					pzlist.removeAllElements();
-					sf="";
-					ssts="";
-					kjzd="";
-				}
-			}
-			
-			private function loadDataFault(e:FaultEvent):void{
-				Alert.show('操作失败',"提示");
-			}
-			
-			private function pagechange(e:PageChangeEvent):void
-				
-			{
-				
-				//				datalist.dataProvider = e.Filter(datas)
-				
-			}
-			
-			
-			
-			private function selectRule():void{
-				if(hy.selectedItem){
+        import httpcontrol.HttpServiceUtil;
+
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.controls.Image;
+        import mx.core.FlexGlobals;
+        import mx.events.FlexEvent;
+        import mx.managers.PopUpManager;
+        import mx.rpc.events.FaultEvent;
+        import mx.rpc.events.ResultEvent;
+
+        import uicontrol.BigImage;
+        import uicontrol.BigText;
+        import uicontrol.PZEdit;
+
+        import util.ToolUtil;
+
+        [Bindable]
+        private var businessList:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var kjkmList:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var kjzdList:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var ruleList:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var sfList:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var ticketTreeList:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var ticketList:ArrayCollection = new ArrayCollection();
+        private var ticketAllList:ArrayCollection = new ArrayCollection();
+
+        [Bindable]
+        private var kjzd:String = "";
+        [Bindable]
+        private var sf:String = "";
+        [Bindable]
+        private var ssts:String = "";
+
+        override public function init(e:FlexEvent):void {
+
+            changehy();
+
+
+        }
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+
+        }
+
+        private function changehy():void {
+            imglist.removeAllElements();
+            var obj:Object = new Object();
+            obj["ruleid"] = hy.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTicketByUserRule", getTicketByRuleResult, "POST").send(obj);
+
+        }
+
+
+        private function getTicketByRuleResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                ticketTreeList = new ArrayCollection(result.result.kindlist as Array);
+                ticketAllList = new ArrayCollection(result.result.kindalllist as Array);
+                ticketAllList.filterFunction = filterData;
+                changeTicket();
+                businessList.removeAll();
+
+                sf = "";
+                ssts = "";
+                kjzd = "";
+                pzlist.removeAllElements();
+            }
+        }
+
+        private function getBusinessByRuleResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                businessList = new ArrayCollection(result.result as Array);
+                businessTree.validateNow();
+                for each(var item:Object in businessList) {
+                    businessTree.expandChildrenOf(item, true);
+
+                }
+                pzlist.removeAllElements();
+                sf = "";
+                ssts = "";
+                kjzd = "";
+            }
+        }
+
+        private function loadDataFault(e:FaultEvent):void {
+            Alert.show('操作失败', "提示");
+        }
+
+        private function pagechange(e:PageChangeEvent):void {
+
+            //				datalist.dataProvider = e.Filter(datas)
+
+        }
+
+
+        private function selectRule():void {
+            if (hy.selectedItem) {
 //					ruleName.text = hy.selectedItem.name;
 //					ruleId.text = gridrule.selectedItem.id;
-					var obj:Object = new Object();
-					obj["ruleid"]=hy.selectedItem.id;
-					HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTicketByRule",selectRuleResult,"POST").send(obj);
-				}
-			}
-			
-			private function selectRuleResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					ticketList=new ArrayCollection(result.result as Array);
-					businessList.removeAll();
-					kjkmList.removeAll();
-					sf="";
-					ssts="";
-					kjzd="";
-					pzlist.removeAllElements();
-				}
-			}
-			private function selectTicket():void{
-				if(hy.selectedItem){
-					var obj:Object = new Object();
-					obj["ruleid"]=hy.selectedItem.id;
-					obj["ticketid"]=ticketTree.selectedItem.id;
-					HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBusinessByTicket",selectTicketResult,"POST").send(obj);
-				}
-				
-			}
-			
-			private function showBusiness():void{
-				var data:Object =new Object();
-				data['bid']=businessTree.selectedItem.id;
-				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getPZbyBusiness",showPZ,"POST").send(data);
-				showRelation();
-				
-			}
-			private function showPZ(result:Object , e:ResultEvent):void{
-				pzlist.removeAllElements();
-				for each(var pid:String in result.result){
-					var pzview:PZEdit=new PZEdit();
-					pzview.editenable=false;
-					pzview.bid=businessTree.selectedItem.id;
-					pzview.pzid = pid;
-					pzlist.addElement(pzview);
-				}
-				
-			}
-			
-			private function changeTicket():void{
-				if(key.text){
-					ticketAllList.refresh();
-					ticketList=ticketAllList;
-				}else{
-					ticketList=ticketTreeList;
-					ticketTree.validateNow();
-					for each(var item:Object in ticketList){
-						ticketTree.expandChildrenOf(item,true);
-						
-					}
-				}
-			}
-			
-			private function filterData(item:Object):Boolean{
-				if(item.name.indexOf(key.text)>-1) {
-					return true; 
-				}else{ 
-					return false;
-				}
-			}
-			
-			private function showImage():void{
-				imglist.removeAllElements();
-				if(ticketTree.selectedItem){
-					if(ticketTree.selectedItem.desc){
-						var lbl:Label=new Label();
-						lbl.text = ticketTree.selectedItem.desc;
-						lbl.width= vdbkjzd.width-30;
-						imglist.addElement(lbl);
-					}
-					var img:Image  = null;
-					for each(var imgurl:String in ticketTree.selectedItem.imgs){
-						img = new Image();
-						img.source = imgurl;
-						img.addEventListener(MouseEvent.CLICK,bigImage);
-						imglist.addElement(img);
-					}
-				}
+                var obj:Object = new Object();
+                obj["ruleid"] = hy.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTicketByRule", selectRuleResult, "POST").send(obj);
+            }
+        }
+
+        private function selectRuleResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                ticketList = new ArrayCollection(result.result as Array);
+                businessList.removeAll();
+                kjkmList.removeAll();
+                sf = "";
+                ssts = "";
+                kjzd = "";
+                pzlist.removeAllElements();
+            }
+        }
+
+        private function selectTicket():void {
+            if (hy.selectedItem) {
+                var obj:Object = new Object();
+                obj["ruleid"] = hy.selectedItem.id;
+                obj["ticketid"] = ticketTree.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBusinessByTicket", selectTicketResult, "POST").send(obj);
+            }
+
+        }
+
+        private function showBusiness():void {
+            var data:Object = new Object();
+            data['bid'] = businessTree.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/ft/getPZbyBusiness", showPZ, "POST").send(data);
+            showRelation();
+
+        }
+
+        private function showPZ(result:Object, e:ResultEvent):void {
+            pzlist.removeAllElements();
+            for each(var pid:String in result.result) {
+                var pzview:PZEdit = new PZEdit();
+                pzview.editenable = false;
+                pzview.bid = businessTree.selectedItem.id;
+                pzview.pzid = pid;
+                pzlist.addElement(pzview);
+            }
+
+        }
+
+        private function changeTicket():void {
+            if (key.text) {
+                ticketAllList.refresh();
+                ticketList = ticketAllList;
+            } else {
+                ticketList = ticketTreeList;
+                ticketTree.validateNow();
+                for each(var item:Object in ticketList) {
+                    ticketTree.expandChildrenOf(item, true);
+
+                }
+            }
+        }
+
+        private function filterData(item:Object):Boolean {
+            if (item.name.indexOf(key.text) > -1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private function showImage():void {
+            imglist.removeAllElements();
+            if (ticketTree.selectedItem) {
+                if (ticketTree.selectedItem.desc) {
+                    var lbl:Label = new Label();
+                    lbl.text = ticketTree.selectedItem.desc;
+                    lbl.width = vdbkjzd.width - 30;
+                    imglist.addElement(lbl);
+                }
+                var img:Image = null;
+                for each(var imgurl:String in ticketTree.selectedItem.imgs) {
+                    img = new Image();
+                    img.source = imgurl;
+                    img.addEventListener(MouseEvent.CLICK, bigImage);
+                    imglist.addElement(img);
+                }
+            }
 //				showRelation();
-				var obj:Object = new Object();
-				obj["ruleid"]=hy.selectedItem.id;
-				obj["ticketid"]=ticketTree.selectedItem.id;
-				HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBusinessByUserRule",getBusinessByRuleResult,"POST").send(obj);
-				
-			}
-			
-			private function selectTicketResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					businessList=new ArrayCollection(result.result as Array);
-					kjkmList.removeAll();
-				}
-			}
-			private function selectBusiness():void{
-				if(ticketTree.selectedItem){
-					var obj:Object = new Object();
-					obj["ruleid"]=hy.selectedItem.id;
-					obj["ticketid"]=ticketTree.selectedItem.id;
-					obj["businessid"]=businessTree.selectedItem.id;
-					HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKMByBusiness",selectBusinessResult,"POST").send(obj);
-				}
-				
-			}
-			private function selectBusinessResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					kjzd=result.result.kjzd;
-					sf=result.result.sf;
-					ssts=result.result.ssts;
-					
-				}
-			}
-			private function  showRelation():void{
-				if(hy.selectedItem!=null&&ticketTree.selectedItem!=null&&businessTree.selectedItem!=null){
-					var obj:Object = new Object();
-					obj["ruleid"]=hy.selectedItem.id;
-					obj["ticketid"]=ticketTree.selectedItem.id;
-					obj["businessid"]=businessTree.selectedItem.id;
-					HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKJZDByKM",selectKjkmResult,"POST").send(obj);
-				}
-				
-			}
-			private function selectKjkmResult(result:Object,e:ResultEvent):void{
-				if(result.success){
-					
-					kjzd=result.result.kjzd;
-					sf=result.result.sf;
-					ssts=result.result.ssts;
-					
-				}
-			}
-			
-			
-			
-			public function refresh(result:Object,e:ResultEvent):void{
-				if(result.message.success){
-				}
-			}
-			
-			private function iconFn(item:Object):Class{
-				if(item.hasOwnProperty("children")){
-					return null;
-				}
-				if(item.type=="business"){
-					return addimg;
-				}
-				if(item.type=="ticket"){
-					return wximg;
-				}
-				if(item.type=="km"){
-					return delimg;
-				}
-				return addimg;
-			}
-			private function showKJZD():void{
-				var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigText,true) as BigText;
-				s.data = kjzd;
-			}
-			private function showSF():void{
-				var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigText,true) as BigText;
-				s.data = sf;
-			}
-			private function showSSTS():void{
-				var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigText,true) as BigText;
-				s.data = ssts;
-			}
-			private function bigImage(event:MouseEvent):void{
-				if(event.currentTarget is Image){
-					//					Alert.show(event.currentTarget.source,"图片地址");
-					var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigImage,true) as BigImage;
-					s.imgurl = event.currentTarget.source;
-				}
-				
-				
-			}
-			
-			[Bindable]
-			private var buttonArr:ArrayCollection=new ArrayCollection([{'label':'保存关联','ico':addimg},{'label':'删除关联','ico':delimg}]);
-			
-		]]>
+            var obj:Object = new Object();
+            obj["ruleid"] = hy.selectedItem.id;
+            obj["ticketid"] = ticketTree.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/ft/getBusinessByUserRule", getBusinessByRuleResult, "POST").send(obj);
+
+        }
+
+        private function selectTicketResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                businessList = new ArrayCollection(result.result as Array);
+                kjkmList.removeAll();
+            }
+        }
+
+        private function selectBusiness():void {
+            if (ticketTree.selectedItem) {
+                var obj:Object = new Object();
+                obj["ruleid"] = hy.selectedItem.id;
+                obj["ticketid"] = ticketTree.selectedItem.id;
+                obj["businessid"] = businessTree.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKMByBusiness", selectBusinessResult, "POST").send(obj);
+            }
+
+        }
+
+        private function selectBusinessResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                kjzd = result.result.kjzd;
+                sf = result.result.sf;
+                ssts = result.result.ssts;
+
+            }
+        }
+
+        private function showRelation():void {
+            if (hy.selectedItem != null && ticketTree.selectedItem != null && businessTree.selectedItem != null) {
+                var obj:Object = new Object();
+                obj["ruleid"] = hy.selectedItem.id;
+                obj["ticketid"] = ticketTree.selectedItem.id;
+                obj["businessid"] = businessTree.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/ft/getKJZDByKM", selectKjkmResult, "POST").send(obj);
+            }
+
+        }
+
+        private function selectKjkmResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+
+                kjzd = result.result.kjzd;
+                sf = result.result.sf;
+                ssts = result.result.ssts;
+
+            }
+        }
+
+
+        public function refresh(result:Object, e:ResultEvent):void {
+            if (result.message.success) {
+            }
+        }
+
+        private function iconFn(item:Object):Class {
+            if (item.hasOwnProperty("children")) {
+                return null;
+            }
+            if (item.type == "business") {
+                return addimg;
+            }
+            if (item.type == "ticket") {
+                return wximg;
+            }
+            if (item.type == "km") {
+                return delimg;
+            }
+            return addimg;
+        }
+
+        private function showKJZD():void {
+            var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigText, true) as BigText;
+            s.data = kjzd;
+        }
+
+        private function showSF():void {
+            var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigText, true) as BigText;
+            s.data = sf;
+        }
+
+        private function showSSTS():void {
+            var s:BigText = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigText, true) as BigText;
+            s.data = ssts;
+        }
+
+        private function bigImage(event:MouseEvent):void {
+            if (event.currentTarget is Image) {
+                //					Alert.show(event.currentTarget.source,"图片地址");
+                var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigImage, true) as BigImage;
+                s.imgurl = event.currentTarget.source;
+            }
+
+
+        }
+
+        [Bindable]
+        private var buttonArr:ArrayCollection = new ArrayCollection([
+            {'label': '保存关联', 'ico': addimg},
+            {'label': '删除关联', 'ico': delimg}
+        ]);
+        ]]>
 	</fx:Script>
-	<fx:Declarations>
-		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
-		<!--  allowMultipleSelection="true"  -->
-	</fx:Declarations>
-	<s:BorderContainer top="5" bottom="5" left="5" right="5"  borderVisible="false">
-		<s:layout>
-			<s:VerticalLayout gap="3">
-				
-			</s:VerticalLayout>
-		</s:layout>
-		<s:BorderContainer left="0" top="0" height="45" width="100%" borderVisible="false" backgroundImage="{CBorderContainer.toolbgimg}">
-		<s:layout>
-		<s:HorizontalLayout gap="5" verticalAlign="middle" paddingLeft="10">
-		
-		</s:HorizontalLayout>
-		</s:layout>
-			<s:Label text="行业："    fontSize="14" height="25" verticalAlign="middle" textAlign="left" >
-				
-			</s:Label>
-			<mx:ComboBox id="hy" dataProvider="{ToolUtil.ruleList}" labelField="name" width="100" change="changehy()">
-				
-			</mx:ComboBox>
-			<s:Label text="票据查找："    fontSize="14" height="25" verticalAlign="middle" textAlign="left" >
-				
-			</s:Label>
-			<s:TextInput id="key" width="150" change="changeTicket()" />
-			
-		</s:BorderContainer>
-		<mx:HDividedBox width="100%" height="100%">
-			
-			<s:BorderContainer width="200" height="100%"  borderVisible="false">
-				
-				<mx:Tree id="ticketTree"   iconFunction="iconFn" itemClick="showImage()"    width="100%" height="100%" dataProvider="{ticketList}" labelField="name" >
-					
-				</mx:Tree>
-				
-			</s:BorderContainer>
-			<s:BorderContainer width="200" height="100%"  borderVisible="false">
-				
-				
-				<mx:Tree id="businessTree"  iconFunction="iconFn" itemClick="showBusiness()"    width="100%" height="100%" dataProvider="{businessList}" labelField="businessText" >
-					
-				</mx:Tree>
-				
-			</s:BorderContainer>
-			
-			<mx:VDividedBox id="vdbkjzd" width="100%" height="100%">
-				
-				
-						<s:BorderContainer width="100%" height="40%"   borderVisible="false">
-							<s:layout>
-								<s:VerticalLayout gap="3">
-									
-								</s:VerticalLayout>
-							</s:layout>
-							<s:BorderContainer  width="100%" height="30" borderVisible="false">
-								<s:layout>
-									<s:HorizontalLayout gap="10">
-										
-									</s:HorizontalLayout>
-								</s:layout>
-								<s:Button id="kjztbtn" label="会计制度" visible="{kjzd?true:false}" height="25" chromeColor="#faf0cc" click="showKJZD()" />
-								<s:Button id="kjsf" label="税法" visible="{sf?true:false}" height="25" chromeColor="#faf0cc"  click="showSF()" />
-								<s:Button id="kjssts" label="涉税提示" visible="{ssts?true:false}" height="25" chromeColor="#faf0cc"  click="showSSTS()" />
-							</s:BorderContainer>
-							<s:Scroller width="100%" height="100%">
-								<s:Group width="100%" height="100%">
-								<s:BorderContainer id="pzlist" width="100%" borderVisible="false">
-									<s:layout>
-										<s:VerticalLayout gap="3">
-											
-										</s:VerticalLayout>
-									</s:layout>
-								</s:BorderContainer>
-								</s:Group>
-							</s:Scroller>
-						</s:BorderContainer>
-					
-				
-				<s:Scroller width="100%" height="100%">
-					<s:Group width="100%" height="100%">
-						<s:BorderContainer id="imglist"   borderVisible="false">
-							<s:layout>
-								<s:VerticalLayout gap="3">
-									
-								</s:VerticalLayout>
-							</s:layout>
-							
-						</s:BorderContainer>
-					</s:Group>
-				</s:Scroller>
-			</mx:VDividedBox>
-			
-			
-		</mx:HDividedBox>
-	</s:BorderContainer>
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+        <!--  allowMultipleSelection="true"  -->
+    </fx:Declarations>
+    <s:BorderContainer top="5" bottom="5" left="5" right="5" borderVisible="false">
+        <s:layout>
+            <s:VerticalLayout gap="3">
+
+            </s:VerticalLayout>
+        </s:layout>
+        <s:BorderContainer left="0" top="0" height="45" width="100%" borderVisible="false"
+                           backgroundImage="{CBorderContainer.toolbgimg}">
+            <s:layout>
+                <s:HorizontalLayout gap="5" verticalAlign="middle" paddingLeft="10">
+
+                </s:HorizontalLayout>
+            </s:layout>
+            <s:Label text="行业：" fontSize="14" height="25" verticalAlign="middle" textAlign="left">
+
+            </s:Label>
+            <mx:ComboBox id="hy" dataProvider="{ToolUtil.ruleList}" labelField="name" width="100" change="changehy()">
+
+            </mx:ComboBox>
+            <s:Label text="票据查找：" fontSize="14" height="25" verticalAlign="middle" textAlign="left">
+
+            </s:Label>
+            <s:TextInput id="key" width="150" change="changeTicket()"/>
+
+        </s:BorderContainer>
+        <mx:HDividedBox width="100%" height="100%">
+
+            <s:BorderContainer width="200" height="100%" borderVisible="false">
+
+                <mx:Tree id="ticketTree" iconFunction="iconFn" itemClick="showImage()" width="100%" height="100%"
+                         dataProvider="{ticketList}" labelField="name">
+
+                </mx:Tree>
+
+            </s:BorderContainer>
+            <s:BorderContainer width="200" height="100%" borderVisible="false">
+
+
+                <mx:Tree id="businessTree" iconFunction="iconFn" itemClick="showBusiness()" width="100%" height="100%"
+                         dataProvider="{businessList}" labelField="businessText">
+
+                </mx:Tree>
+
+            </s:BorderContainer>
+
+            <mx:VDividedBox id="vdbkjzd" width="100%" height="100%">
+
+
+                <s:BorderContainer width="100%" height="40%" borderVisible="false">
+                    <s:layout>
+                        <s:VerticalLayout gap="3">
+
+                        </s:VerticalLayout>
+                    </s:layout>
+                    <s:BorderContainer width="100%" height="30" borderVisible="false">
+                        <s:layout>
+                            <s:HorizontalLayout gap="10">
+
+                            </s:HorizontalLayout>
+                        </s:layout>
+                        <s:Button id="kjztbtn" label="会计制度" visible="{kjzd?true:false}" height="25"
+                                  chromeColor="#faf0cc" click="showKJZD()"/>
+                        <s:Button id="kjsf" label="税法" visible="{sf?true:false}" height="25" chromeColor="#faf0cc"
+                                  click="showSF()"/>
+                        <s:Button id="kjssts" label="涉税提示" visible="{ssts?true:false}" height="25" chromeColor="#faf0cc"
+                                  click="showSSTS()"/>
+                    </s:BorderContainer>
+                    <s:Scroller width="100%" height="100%">
+                        <s:Group width="100%" height="100%">
+                            <s:BorderContainer id="pzlist" width="100%" borderVisible="false">
+                                <s:layout>
+                                    <s:VerticalLayout gap="3">
+
+                                    </s:VerticalLayout>
+                                </s:layout>
+                            </s:BorderContainer>
+                        </s:Group>
+                    </s:Scroller>
+                </s:BorderContainer>
+
+
+                <s:Scroller width="100%" height="100%">
+                    <s:Group width="100%" height="100%">
+                        <s:BorderContainer id="imglist" borderVisible="false">
+                            <s:layout>
+                                <s:VerticalLayout gap="3">
+
+                                </s:VerticalLayout>
+                            </s:layout>
+
+                        </s:BorderContainer>
+                    </s:Group>
+                </s:Scroller>
+            </mx:VDividedBox>
+
+
+        </mx:HDividedBox>
+    </s:BorderContainer>
 </control:CBorderContainer>

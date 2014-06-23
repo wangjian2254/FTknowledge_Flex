@@ -17,7 +17,7 @@
  *  components that support the <code>borderStyle</code> style.
  *  The default value depends on the component class;
  *  if not overridden for the class, the default value is <code>0xB7BABC</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -27,14 +27,14 @@
 
 /**
  *  Radius of component corners.
- *  The following components support this style: Alert, Button, ComboBox,  
- *  LinkButton, MenuBar, NumericStepper, Panel, ScrollBar, Tab, TitleWindow, 
+ *  The following components support this style: Alert, Button, ComboBox,
+ *  LinkButton, MenuBar, NumericStepper, Panel, ScrollBar, Tab, TitleWindow,
  *  and any component
  *  that supports a <code>borderStyle</code> property set to <code>"solid"</code>.
  *  The default value depends on the component class;
  *  if not overridden for the class, the default value
  *  for the Halo theme is <code>0</code> and for the Spark theme is <code>2</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -45,9 +45,9 @@
 /**
  *  Alphas used for the background fill of controls. Use [1, 1] to make the control background
  *  opaque.
- *  
+ *
  *  @default [ 0.6, 0.4 ]
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -58,9 +58,9 @@
 /**
  *  Colors used to tint the background of the control.
  *  Pass the same color for both values for a flat-looking control.
- *  
+ *
  *  @default [ 0xFFFFFF, 0xCCCCCC ]
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -70,11 +70,11 @@
 
 /**
  *  Alpha transparencies used for the highlight fill of controls.
- *  The first value specifies the transparency of the top of the highlight and the second value specifies the transparency 
+ *  The first value specifies the transparency of the top of the highlight and the second value specifies the transparency
  *  of the bottom of the highlight. The highlight covers the top half of the skin.
- *  
+ *
  *  @default [ 0.3, 0.0 ]
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

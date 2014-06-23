@@ -1,13 +1,10 @@
-package util
-{
-	import control.Loading;
+package util {
+import control.Loading;
 
-	public class LoadingUtil
-	{
-		public function LoadingUtil()
-		{
-		}
-		
-		public static var loading:Loading;
-	}
+public class LoadingUtil {
+    public function LoadingUtil() {
+    }
+
+    public static var loading:Loading;
+}
 }

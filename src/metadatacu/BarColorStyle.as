@@ -15,9 +15,9 @@
  *  and a brighter color computed from it.
  *  This style has no effect on other components, but can be set on a container
  *  to control the appearance of all progress bars found within.
- *  The default value is <code>undefined</code>, which means it is not set. 
+ *  The default value is <code>undefined</code>, which means it is not set.
  *  In this case, the <code>themeColor</code> style property is used.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

@@ -18,7 +18,7 @@
  *  <p>The default value for the ComboBox control is 5.</p>
  *  <p>The default value for the Form container is 16.</p>
  *  <p>The default value for the Tree control is 2.</p>
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -34,7 +34,7 @@
  *     and in the Spark theme is 6.</p>
  *  <p>The default value for the ComboBox control is 5.</p>
  *  <p>The default value for the Form container is 16.</p>
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

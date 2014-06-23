@@ -11,10 +11,10 @@
 
 /**
  *  Specifies the alpha transparency value of the focus skin.
- *  
+ *
  *  The default value for the Halo theme is <code>0.4</code>.
  *  The default value for the Spark theme is <code>0.55</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -33,7 +33,7 @@
  *  the radius of the rounded corners.
  *  The default value depends on the component class; if not overridden for
  *  the class, default value is <code>"tl tr bl br"</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

@@ -16,7 +16,7 @@
  *  The default value is <code>"left"</code>, but some containers,
  *  such as ButtonBar and ToggleButtonBar,
  *  have different default values.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -31,7 +31,7 @@
  *  The default value is <code>"top"</code>, but some containers,
  *  such as ButtonBar, ControlBar, LinkBar,
  *  and ToggleButtonBar, have different default values.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

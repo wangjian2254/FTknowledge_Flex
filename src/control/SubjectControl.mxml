@@ -1,417 +1,435 @@
 <?xml version="1.0" encoding="utf-8"?>
-<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
-						  xmlns:s="library://ns.adobe.com/flex/spark" 
-						  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" width="700" height="700" borderVisible="false" backgroundAlpha="0" xmlns:uicontrol="uicontrol.*">
-	<fx:Script>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                          xmlns:s="library://ns.adobe.com/flex/spark"
+                          xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" width="700" height="700"
+                          borderVisible="false" backgroundAlpha="0" xmlns:uicontrol="uicontrol.*">
+    <fx:Script>
 		<![CDATA[
-			import events.AutoGridEvent;
-			import events.CloseEvent;
-			import events.DelItemEvent;
-			
-			import httpcontrol.HttpServiceUtil;
+        import events.AutoGridEvent;
+        import events.CloseEvent;
 
-            import json.JParser;
+        import httpcontrol.HttpServiceUtil;
 
-            import mx.collections.ArrayCollection;
-			import mx.controls.Alert;
-			import mx.events.FlexEvent;
-			import mx.events.ItemClickEvent;
-			import mx.events.ListEvent;
-            import mx.managers.CursorManager;
-            import mx.rpc.events.ResultEvent;
-			
-			import uicontrol.DelItem;
-			
-			import util.DataUtil;
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.events.FlexEvent;
+        import mx.events.ItemClickEvent;
+        import mx.rpc.events.ResultEvent;
 
-            [Bindable]
-            private var taxlist:ArrayCollection=new ArrayCollection();
-            [Bindable]
-            private var rulelist:ArrayCollection=new ArrayCollection();
+        import util.DataUtil;
+
+        [Bindable]
+        private var taxlist:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var rulelist:ArrayCollection = new ArrayCollection();
 
 
-            private function getTemplateList():void{
-                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTemplateList",getTemplateDataResult,"POST").send();
+        private function getTemplateList():void {
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTemplateList", getTemplateDataResult, "POST").send();
+        }
+
+        private function getTemplateDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                taxlist.removeAll();
+                taxlist.addAll(new ArrayCollection(result.result as Array));
             }
-            private  function getTemplateDataResult(result:Object,e:ResultEvent):void{
-                if(result.success){
-                    taxlist.removeAll();
-                    taxlist.addAll(new ArrayCollection(result.result as Array));
-                }
-            }
+        }
 
-            private var tempItem:Object=null;
-            private function selectTemplate():void{
-                if(taxtemplateGrid.selectedItem!=tempItem){
-                    var data:Object=new Object();
-                    data["templateid"]=taxtemplateGrid.selectedItem.id;
-                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList",getRuleDataResult,"POST").send(data);
-                    tempItem=taxtemplateGrid.selectedItem;
-                }
+        private var tempItem:Object = null;
+
+        private function selectTemplate():void {
+            if (taxtemplateGrid.selectedItem != tempItem) {
+                var data:Object = new Object();
+                data["templateid"] = taxtemplateGrid.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList", getRuleDataResult, "POST").send(data);
+                tempItem = taxtemplateGrid.selectedItem;
             }
-            private  function getRuleDataResult(result:Object,e:ResultEvent):void{
-                if(result.success){
-                    rulelist.removeAll();
-                    rulelist.addAll(new ArrayCollection(result.result as Array));
-                }
+        }
+
+        private function getRuleDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                rulelist.removeAll();
+                rulelist.addAll(new ArrayCollection(result.result as Array));
             }
-            private  function getRuleDataResult2(result:Object,e:ResultEvent):void{
-                if(result.success){
-                    rulelist.removeAll();
-                    rulelist.addAll(new ArrayCollection(result.result as Array));
-                    ruleItem=null;
-                    for each(var item:Object in rulelist){
-                        if(item.id==tempSubject['ruleid']){
-                            taxtemplateRule.selectedItem=item;
-                            selectRule();
-                            break;
-                        }
+        }
+
+        private function getRuleDataResult2(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                rulelist.removeAll();
+                rulelist.addAll(new ArrayCollection(result.result as Array));
+                ruleItem = null;
+                for each(var item:Object in rulelist) {
+                    if (item.id == tempSubject['ruleid']) {
+                        taxtemplateRule.selectedItem = item;
+                        selectRule();
+                        break;
                     }
                 }
             }
+        }
 
-            private var ruleItem:Object=null;
-            private function selectRule():void{
-                if(taxtemplateRule.selectedItem!=ruleItem){
-                    ruleItem=taxtemplateRule.selectedItem;
-                    imgTax.source ='/tax/showTaxImage?ruleid='+ruleItem.id+"&t="+new Date();
+        private var ruleItem:Object = null;
+
+        private function selectRule():void {
+            if (taxtemplateRule.selectedItem != ruleItem) {
+                ruleItem = taxtemplateRule.selectedItem;
+                imgTax.source = '/tax/showTaxImage?ruleid=' + ruleItem.id + "&t=" + new Date();
+            }
+        }
+
+
+        [Bindable]
+        private var buttonArr1:ArrayCollection = new ArrayCollection([
+            {'label': '刷新所有数据', 'ico': refreshimg, 'mode': 'refresh'},
+            {'label': '新增', 'ico': wximg, 'mode': 'add'}
+        ]);
+        [Bindable]
+        private var subjectArr:ArrayCollection = new ArrayCollection([]);
+
+        //新增，保存，删除,回复，转发的处理函数
+        //多个按钮点击事件的处理函数
+        private function clickHander(e:ItemClickEvent):void {
+            var item:Object = e.item;
+            if (item.mode == 'refresh') {
+                loadSubject();
+                getTemplateList();
+
+            }
+            if (item.mode == 'add') {
+                resetFormData();
+                delBtn.enabled = false;
+            }
+
+        }
+
+        private var isPaging:Boolean;
+
+        private function loadSubject():void {
+            var o:Object = {};//如果需要补齐查询参数
+            o["kind"] = kindKey.text;
+            var url:String = o["kind"] || o["kind"] == "" ? "/tax/getSubjectAll" : "/tax/getSubjectByKind";
+            isPaging = !o["kind"] || o["kind"] == "" ? true : false;
+            HttpServiceUtil.getCHTTPServiceAndResult(url, loadSubDataResult, "POST").send(o);
+        }
+
+        private function loadSubDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+//					resetFormData();
+                delBtn.enabled = false;
+                var arr:Array;
+                if (isPaging) {
+                    pagebar1.mPageSize = result.result.limit;
+                    pagebar1.RecordCount = result.result.total;
+                    pagebar1.initPage();
+                    arr = result.result.result is Array ? result.result.result : [];
+                } else {
+                    arr = result.result.result is Array ? result.result.result : [];
                 }
+                subjectArr.removeAll();
+                subjectArr.addAll(new ArrayCollection(arr));
+            }
+        }
+
+        private var tempSubject:Object;
+
+        private function savSubject():void {
+            if (!isValid()) {
+                return;
+            }
+            var o:Object = getFormData();
+            tempSubject = o;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateSubject", savSubjectDataResult, "POST").send(o);
+        }
+
+        private function savSubjectDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                loadSubject();
+                tempSubject['id'] = result.result;
+
+                var data:Object = {};
+                data["sid"] = tempSubject["id"];
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getOptionBySubject", getOptionBySubjectResult, "POST").send(data);
+
+
+            }
+        }
+
+        private function delSubject():void {
+            Alert.show("是否删除", "提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
+                if (e.detail == Alert.YES) {
+                    var o:Object = getFormData();
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/delSubject", delSubjectDataResult, "POST").send(o);
+                }
+            });
+        }
+
+        private function delSubjectDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                resetFormData();
+                loadSubject();
+            }
+        }
+
+        private function delOption():void {
+            Alert.show("是否删除", "提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
+                if (e.detail == Alert.YES) {
+                    var o:Object = {};
+                    o["id"] = optionGrid.selectedItem["id"];
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/delOption", delOptionDataResult, "POST").send(o);
+                }
+            });
+        }
+
+        private function delOptionDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                var dp:ArrayCollection = optionGrid.dataProvider as ArrayCollection;
+                dp.removeItemAt(optionGrid.selectedIndex);
+            }
+        }
+
+        private function resetFormData():void {
+            title.text = "";
+
+            if (optionGrid.dataProvider == null) {
+                optionGrid.dataProvider = new ArrayCollection();
+            } else {
+                optionGrid.dataProvider.removeAll();
+            }
+            bz.text = "";
+            taxtemplateRule.selectedItem = null;
+
+            imgTax.source = null;
+            tempSubject = null;
+
+
+        }
+
+        private function getFormData():Object {
+            var o:Object = {};
+            var n:Object = subjectGrid.selectedItem;
+            if (tempSubject != null && tempSubject.hasOwnProperty("id")) {
+                o['id'] = tempSubject['id'];
+            } else {
+                o['id'] = "";
+            }
+
+            o["title"] = title.text;
+            o["type"] = typeRaido.selectedValue;
+            if (taxtemplateRule.selectedItem) {
+                o["rule"] = taxtemplateRule.selectedItem.id;
+            } else {
+                o["rule"] = "";
             }
 
 
-            [Bindable]
-	        private var buttonArr1:ArrayCollection = new ArrayCollection([
-	            {'label': '刷新', 'ico': refreshimg, 'mode': 'refresh'},
-	            {'label': '新增', 'ico': wximg, 'mode': 'add'}
-	        ]);
-	        [Bindable]
-	        private var subjectArr:ArrayCollection = new ArrayCollection([]);
+            o["bz"] = bz.text;
+            var dp:ArrayCollection = optionGrid.dataProvider as ArrayCollection;
+            var arr:Array = (dp.toArray()).slice(0, dp.length - 1);
+            DataUtil.serializationArr("mx_internal", "option_", o, arr);
+            return o;
+        }
 
-	        //新增，保存，删除,回复，转发的处理函数
-	        //多个按钮点击事件的处理函数
-	        private function clickHander(e:MouseEvent):void {
-				ba1.requireSelection=true;
-				var item:Object=ba1.selectedItem;
-	            if (item.mode == 'refresh') {
-					loadSubject();
-	            }
-				if (item.mode == 'add') {
-					resetFormData();
-					delBtn.enabled=false;
-				}
-	
-	        }
-
-			private var isPaging:Boolean;
-			private function loadSubject():void{
-				var o:Object={};//如果需要补齐查询参数
-				o["kind"]=kindKey.text;
-				var url:String= o["kind"]||o["kind"]==""? "/tax/getSubjectAll":"/tax/getSubjectByKind";
-				isPaging= !o["kind"]||o["kind"]==""?true:false;
-				HttpServiceUtil.getCHTTPServiceAndResult(url, loadSubDataResult, "POST").send(o);
-			}
-			private function loadSubDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-//					resetFormData();
-					delBtn.enabled=false;
-					var arr:Array;
-					if(isPaging){
-						pagebar1.mPageSize = result.result.limit;
-						pagebar1.RecordCount = result.result.total;
-						pagebar1.initPage();
-						arr= result.result.result is Array ?  result.result.result : [];
-					}else{
-						arr= result.result.result is Array ?  result.result.result : [];
-					}
-					subjectArr.removeAll();
-					subjectArr.addAll(new ArrayCollection(arr));
-				}
-			}
-            private var tempSubject:Object;
-			private function savSubject():void{
-				if(!isValid()){
-					return;
-				}
-				var o:Object=getFormData();
-                tempSubject=o;
-				HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateSubject", savSubjectDataResult, "POST").send(o);
-			}
-			private function savSubjectDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-					loadSubject();
-                    tempSubject['id']=result.result;
-
-                    var data:Object={};
-                    data["sid"]=tempSubject["id"];
-                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/getOptionBySubject", getOptionBySubjectResult, "POST").send(data);
-
-
-				}
-			}
-			private function delSubject():void{
-				Alert.show("是否删除","提示",Alert.YES|Alert.NO,null,function(e:mx.events.CloseEvent):void{
-					if(e.detail==Alert.YES){
-						var o:Object=getFormData();
-						HttpServiceUtil.getCHTTPServiceAndResult("/tax/delSubject", delSubjectDataResult, "POST").send(o);
-					}
-				});
-			}
-			private function delSubjectDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-                    resetFormData();
-					loadSubject();
-				}
-			}
-			private function delOption():void{
-				Alert.show("是否删除","提示",Alert.YES|Alert.NO,null,function(e:mx.events.CloseEvent):void{
-					if(e.detail==Alert.YES){
-						var o:Object={};
-						o["id"]=optionGrid.selectedItem["id"];
-						HttpServiceUtil.getCHTTPServiceAndResult("/tax/delOption", delOptionDataResult, "POST").send(o);
-					}
-				});
-			}
-			private function delOptionDataResult(result:Object, e:ResultEvent):void {
-				if (result.success) {
-					var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-					dp.removeItemAt(optionGrid.selectedIndex);
-				}
-			}
-
-			private function resetFormData():void{
-				title.text="";
-
-				if(optionGrid.dataProvider==null){
-					optionGrid.dataProvider=new ArrayCollection();
-				}else{
-					optionGrid.dataProvider.removeAll();
-				}
-				bz.text="";
-                taxtemplateRule.selectedItem=null;
-
-                imgTax.source=null;
-                tempSubject=null;
-
-
-			}
-			private function getFormData():Object{
-				var o:Object={};
-				var n:Object=subjectGrid.selectedItem;
-                if(tempSubject!=null&&tempSubject.hasOwnProperty("id")){
-                    o['id']=tempSubject['id'];
-                }else{
-                    o['id']="";
-                }
-
-				o["title"]=title.text;
-				o["type"]=typeRaido.selectedValue;
-                if(taxtemplateRule.selectedItem){
-                    o["rule"]=taxtemplateRule.selectedItem.id;
-                }else{
-                    o["rule"]="";
-                }
-
-
-				o["bz"]=bz.text;
-				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-				var arr:Array=(dp.toArray()).slice(0,dp.length-1);
-				DataUtil.serializationArr("mx_internal","option_",o,arr);
-				return o;
-			}
-			private function setFormData(o:Object):void{
-				title.text=o["title"];
-				bz.text=o["bz"];
-                typeRaido.selectedValue=o['type'];
+        private function setFormData(o:Object):void {
+            title.text = o["title"];
+            bz.text = o["bz"];
+            typeRaido.selectedValue = o['type'];
 //				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
 //				dp.removeAll();
 //				var optiosArr:Array= o["options"] is Array?o["options"]:[];
 //				dp.addAll(new ArrayCollection(o["options"]));
 
-			}
-			private function isValid():Boolean{
-				var o:Object=getFormData();
-				if(o["title"]==""){
-					Alert.show("题目不能为空","提示");
-					return false;
-				}
+        }
 
-				if(typeRaido.selectedValue==1&&optionGrid.dataProvider.length<=1){
-					Alert.show("选项不能为空","提示");
-					return false;
-				}
-				var arr:Array=optionGrid.dataProvider.toArray();
-				for(var i:int;i<(arr.length-2);i++){
-					if(arr[i]["content"]==""){
-						Alert.show("选项内容不能为空","提示");
-						return false;
-					}
-					if(arr[i]["is_right"]!=true){
-						arr[i]["is_right"]=false;
-					}
-				}
-				if(o["bz"]==""){
-					Alert.show("备注不能为空","提示");
-					return false;
-				}
-				return true;
-			}
-			private function seletSubjec():void{
-				ba1.requireSelection=false;
-				ba1.selectedIndex=-1;
-				var o:Object=subjectGrid.selectedItem;
-				tempSubject=o;
-				setFormData(o);
-				delBtn.enabled=true;
-
-                var data:Object={};
-                data["sid"]=o["id"];
-                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getOptionBySubject", getOptionBySubjectResult, "POST").send(data);
-
+        private function isValid():Boolean {
+            var o:Object = getFormData();
+            if (o["title"] == "") {
+                Alert.show("题目不能为空", "提示");
+                return false;
             }
 
-            private function getOptionBySubjectResult(result:Object,e:ResultEvent):void{
-                if(result.success){
-                    tempSubject['options']=result.result['options'];
-                    tempSubject['templateid']=result.result['templateid'];
-                    tempSubject['ruleid']=result.result['ruleid'];
-                    optionGrid.dataProvider = new ArrayCollection(tempSubject['options']);
-                    for each(var item:Object in taxlist){
-                        if(item.id==tempSubject['templateid']){
-                            taxtemplateGrid.selectedItem=item;
-                            break;
-                        }
-                    }
-
-                    if(tempSubject['templateid']){
-                        var data:Object=new Object();
-                        data["templateid"]=tempSubject['templateid'];
-                        HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList",getRuleDataResult2,"POST").send(data);
-                    }else{
-                        taxtemplateRule.selectedItem=null;
-                        imgTax.source=null;
-                    }
-
-
+            if (typeRaido.selectedValue == 1 && optionGrid.dataProvider.length <= 1) {
+                Alert.show("选项不能为空", "提示");
+                return false;
+            }
+            var arr:Array = optionGrid.dataProvider.toArray();
+            for (var i:int; i < (arr.length - 2); i++) {
+                if (arr[i]["content"] == "") {
+                    Alert.show("选项内容不能为空", "提示");
+                    return false;
+                }
+                if (arr[i]["is_right"] != true) {
+                    arr[i]["is_right"] = false;
                 }
             }
+            if (o["bz"] == "") {
+                Alert.show("备注不能为空", "提示");
+                return false;
+            }
+            return true;
+        }
 
-	        override public function init(e:FlexEvent):void {
-				optionGrid.dataProvider=new ArrayCollection();
-				loadSubject();
-                getTemplateList();
-                showType();
-	        }
-	
+        private function seletSubjec():void {
+            var o:Object = subjectGrid.selectedItem;
+            tempSubject = o;
+            setFormData(o);
+            delBtn.enabled = true;
 
-	
-	        override public function closeContainer(e:CloseEvent):void {
-                dispatchEvent(e);
-	        }
-	
+            var data:Object = {};
+            data["sid"] = o["id"];
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getOptionBySubject", getOptionBySubjectResult, "POST").send(data);
 
-	
-			protected function optionGrid_optionHandler(event:AutoGridEvent):void
-			{	
-				var data:Object=event.data.item;
-				if(event.type==AutoGridEvent.DELETE){
-					if(!data["id"]){
-						var dataProvider:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-						dataProvider.removeItemAt(data.rowIndex);
-					}else{
-						delOption();
-					}
-				}
-			}
+        }
 
-        private function  showType():void{
-            if(typeRaido.selectedValue==2){
-                content3.visible=false;
-                content3.height=0;
+        private function getOptionBySubjectResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                tempSubject['options'] = result.result['options'];
+                tempSubject['templateid'] = result.result['templateid'];
+                tempSubject['ruleid'] = result.result['ruleid'];
+                optionGrid.dataProvider = new ArrayCollection(tempSubject['options']);
+                for each(var item:Object in taxlist) {
+                    if (item.id == tempSubject['templateid']) {
+                        taxtemplateGrid.selectedItem = item;
+                        break;
+                    }
+                }
+
+                if (tempSubject['templateid']) {
+                    var data:Object = new Object();
+                    data["templateid"] = tempSubject['templateid'];
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList", getRuleDataResult2, "POST").send(data);
+                } else {
+                    taxtemplateRule.selectedItem = null;
+                    imgTax.source = null;
+                }
 
 
             }
-            if(typeRaido.selectedValue==1){
-                content3.visible=true;
-                content3.height=150;
+        }
+
+        override public function init(e:FlexEvent):void {
+            optionGrid.dataProvider = new ArrayCollection();
+            loadSubject();
+            getTemplateList();
+            showType();
+        }
+
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+        }
+
+
+        protected function optionGrid_optionHandler(event:AutoGridEvent):void {
+            var data:Object = event.data.item;
+            if (event.type == AutoGridEvent.DELETE) {
+                if (!data["id"]) {
+                    var dataProvider:ArrayCollection = optionGrid.dataProvider as ArrayCollection;
+                    dataProvider.removeItemAt(data.rowIndex);
+                } else {
+                    delOption();
+                }
+            }
+        }
+
+        private function showType():void {
+            if (typeRaido.selectedValue == 2) {
+                content3.visible = false;
+                content3.height = 0;
+
+
+            }
+            if (typeRaido.selectedValue == 1) {
+                content3.visible = true;
+                content3.height = 150;
             }
             formSubject.invalidateSize();
         }
 
-        private function typeShow(item:Object, column:DataGridColumn):String{
-            if(item.type==1){
+        private function typeShow(item:Object, column:GridColumn):String {
+            if (item.type == 1) {
                 return "选择题";
-            }else{
+            } else {
                 return "凭证题";
             }
         }
-
         ]]>
 	</fx:Script>
-	<fx:Declarations>
-		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
         <s:RadioButtonGroup id="typeRaido" change="showType()"></s:RadioButtonGroup>
-	</fx:Declarations>
-	<s:BorderContainer top="5" bottom="5" left="5" right="5"  borderVisible="false" color="0x333333" skinClass="skins.contentBoxSkin">
-		<s:layout>
-			<s:VerticalLayout>
-				
-			</s:VerticalLayout>
-		</s:layout>
-		<s:BorderContainer left="0" top="0" height="45" width="100%" borderVisible="false" backgroundImage="{CBorderContainer.toolbgimg}">
-			<s:layout>
-				<s:HorizontalLayout gap="20" verticalAlign="middle" paddingLeft="20">
-					
-				</s:HorizontalLayout>
-			</s:layout>
-			<s:HGroup height="20">
-				<s:Label text="关键字" height="100%" verticalAlign="middle">
-				</s:Label>
-				<s:TextInput id="kindKey" height="100%">
-				</s:TextInput>
-			</s:HGroup>
-			<s:ButtonBar id="ba1" dataProvider="{buttonArr1}" selectedIndex="0" doubleClickEnabled="true"  chromeColor="#faf0cc"  labelField="label" iconField="ico"  height="30"  requireSelection="true" click="clickHander(event)">
-			</s:ButtonBar>
-		</s:BorderContainer>
-		<s:BorderContainer height="100%" width="100%" borderVisible="false">
-			<s:layout>
-				<s:HorizontalLayout gap="2">
-					
-				</s:HorizontalLayout>
-			</s:layout>
-			<s:VGroup height="100%" width="430" >
-				<mx:DataGrid id="subjectGrid" height="100%" width="100%" dataProvider="{subjectArr}" itemClick="seletSubjec();">
-					<mx:columns>
-						<mx:DataGridColumn headerText="题目" dataField="title">
-							
-						</mx:DataGridColumn>
-						<mx:DataGridColumn headerText="类型" dataField="type" width="70" labelFunction="typeShow">
-							
-						</mx:DataGridColumn>
-					</mx:columns>
-				</mx:DataGrid>
-				<uicontrol:Pageing id="pagebar1" infolbl="false">
-				</uicontrol:Pageing>
-			</s:VGroup>
-			<s:Scroller width="100%" height="100%">
+    </fx:Declarations>
+    <s:BorderContainer top="5" bottom="5" left="5" right="5" borderVisible="false" color="0x333333"
+                       skinClass="skins.contentBoxSkin">
+        <s:layout>
+            <s:VerticalLayout>
+
+            </s:VerticalLayout>
+        </s:layout>
+        <s:BorderContainer left="0" top="0" height="45" width="100%" borderVisible="false"
+                           backgroundImage="{CBorderContainer.toolbgimg}">
+            <s:layout>
+                <s:HorizontalLayout gap="20" verticalAlign="middle" paddingLeft="20">
+
+                </s:HorizontalLayout>
+            </s:layout>
+            <s:HGroup height="20">
+                <s:Label text="关键字" height="100%" verticalAlign="middle">
+                </s:Label>
+                <s:TextInput id="kindKey" height="100%">
+                </s:TextInput>
+            </s:HGroup>
+            <mx:ButtonBar id="ba1" dataProvider="{buttonArr1}" selectedIndex="0" doubleClickEnabled="true"
+                          chromeColor="#faf0cc" labelField="label" iconField="ico" height="30"
+                          itemClick="clickHander(event)">
+            </mx:ButtonBar>
+        </s:BorderContainer>
+        <s:BorderContainer height="100%" width="100%" borderVisible="false">
+            <s:layout>
+                <s:HorizontalLayout gap="2">
+
+                </s:HorizontalLayout>
+            </s:layout>
+            <s:VGroup height="100%" width="430">
+                <s:DataGrid id="subjectGrid" height="100%" width="100%" dataProvider="{subjectArr}"
+                             selectionChange="seletSubjec();">
+
+                    <s:columns>
+                        <s:ArrayList>
+                            <s:GridColumn headerText="题目" dataField="title" dataTipField="title" >
+
+                            </s:GridColumn>
+                            <s:GridColumn headerText="类型" width="80" dataField="is_pub" labelFunction="typeShow">
+
+                            </s:GridColumn>
+                        </s:ArrayList>
+
+                    </s:columns>
+                </s:DataGrid>
+                <uicontrol:Pageing id="pagebar1" infolbl="false">
+                </uicontrol:Pageing>
+            </s:VGroup>
+            <s:Scroller width="100%" height="100%">
                 <s:Group width="100%" height="100%">
                     <s:Form width="100%" id="formSubject">
-                        <s:FormItem label="题目:" height="120" width="80%"  id="content1">
-                            <s:TextArea id="title"  width="100%" prompt="题目内容" height="120">
+                        <s:FormItem label="题目:" height="120" width="80%" id="content1">
+                            <s:TextArea id="title" width="100%" prompt="题目内容" height="120">
                             </s:TextArea>
                         </s:FormItem>
-                        <s:FormItem width="80%"   label="类型:" >
+                        <s:FormItem width="80%" label="类型:">
                             <s:layout>
                                 <s:HorizontalLayout gap="10"></s:HorizontalLayout>
                             </s:layout>
                             <s:RadioButton label="选择题" selected="true" value="1" group="{typeRaido}"></s:RadioButton>
                             <s:RadioButton label="凭证题" selected="false" value="2" group="{typeRaido}"></s:RadioButton>
                         </s:FormItem>
-                        <s:FormItem width="80%" id="content3"  label="选项:" height="150">
-                            <uicontrol:AutoGrid editable="true" width="100%" id="optionGrid" height="150" autoDelete="optionGrid_optionHandler(event)"  sortableColumns="false">
+                        <s:FormItem width="80%" id="content3" label="选项:" height="150">
+                            <uicontrol:AutoGrid editable="true" width="100%" id="optionGrid" height="150"
+                                                autoDelete="optionGrid_optionHandler(event)" sortableColumns="false">
                                 <uicontrol:columns>
                                     <mx:DataGridColumn headerText="选项内容" dataField="content" textAlign="left">
                                     </mx:DataGridColumn>
-                                    <mx:DataGridColumn headerText="是否正确" dataField="is_right" width="70" editable="false">
+                                    <mx:DataGridColumn headerText="是否正确" dataField="is_right" width="70"
+                                                       editable="false">
                                         <mx:itemRenderer>
                                             <fx:Component>
                                                 <mx:Canvas width="100%">
@@ -419,14 +437,16 @@
                                                         <fx:Script>
 															<![CDATA[
                                                             import mx.events.ListEvent;
+
                                                             private var _data:Object;
-                                                            override public function set data(o:Object):void{
-                                                                _data=o;
-                                                                is_right.selected=o["is_right"];
+                                                            override public function set data(o:Object):void {
+                                                                _data = o;
+                                                                is_right.selected = o["is_right"];
                                                             }
-                                                            private function clickHandler():void{
-                                                                _data["is_right"]=is_right.selected;
-                                                                dispatchEvent(new ListEvent(ListEvent.ITEM_CLICK,false,false,-1,-1,null,this));
+
+                                                            private function clickHandler():void {
+                                                                _data["is_right"] = is_right.selected;
+                                                                dispatchEvent(new ListEvent(ListEvent.ITEM_CLICK, false, false, -1, -1, null, this));
                                                             }
                                                             ]]>
 														</fx:Script>
@@ -440,18 +460,22 @@
                                 </uicontrol:columns>
                             </uicontrol:AutoGrid>
                         </s:FormItem>
-                        <s:FormItem width="80%"  label="票据:" height="250">
+                        <s:FormItem width="80%" label="票据:" height="250">
                             <s:layout>
                                 <s:HorizontalLayout gap="10" horizontalAlign="left"></s:HorizontalLayout>
                             </s:layout>
-                            <mx:DataGrid width="100%" height="250" id="taxtemplateGrid"  doubleClickEnabled="true" itemClick="selectTemplate()"  dataProvider="{taxlist}">
+                            <mx:DataGrid width="100%" height="250" id="taxtemplateGrid" doubleClickEnabled="true"
+                                         itemClick="selectTemplate()" dataProvider="{taxlist}">
                                 <mx:columns>
-                                    <mx:DataGridColumn headerText="票据模板" dataField="name" editable="true" sortable="false" textAlign="left" ></mx:DataGridColumn>
+                                    <mx:DataGridColumn headerText="票据模板" dataField="name" editable="true"
+                                                       sortable="false" textAlign="left"></mx:DataGridColumn>
                                 </mx:columns>
                             </mx:DataGrid>
-                            <mx:DataGrid width="100%" height="250" id="taxtemplateRule"  doubleClickEnabled="true" itemClick="selectRule()"  dataProvider="{rulelist}">
+                            <mx:DataGrid width="100%" height="250" id="taxtemplateRule" doubleClickEnabled="true"
+                                         itemClick="selectRule()" dataProvider="{rulelist}">
                                 <mx:columns>
-                                    <mx:DataGridColumn headerText="规则" dataField="name"  editable="true" textAlign="left"  ></mx:DataGridColumn>
+                                    <mx:DataGridColumn headerText="规则" dataField="name" editable="true"
+                                                       textAlign="left"></mx:DataGridColumn>
                                 </mx:columns>
                             </mx:DataGrid>
                         </s:FormItem>
@@ -461,9 +485,10 @@
                             </s:TextArea>
                         </s:FormItem>
                         <mx:ControlBar>
-                            <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25" click="savSubject();">
+                            <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25"
+                                      click="savSubject();">
                             </s:Button>
-                            <s:Button id="delBtn" label="删除" height="25"  enabled="false" click="delSubject();">
+                            <s:Button id="delBtn" label="删除" height="25" enabled="false" click="delSubject();">
                             </s:Button>
                         </mx:ControlBar>
 
@@ -472,10 +497,10 @@
                         </s:FormItem>
                     </s:Form>
                 </s:Group>
-			</s:Scroller>
+            </s:Scroller>
 
 
-		</s:BorderContainer>
-	</s:BorderContainer>
+        </s:BorderContainer>
+    </s:BorderContainer>
 
 </control:CBorderContainer>

@@ -17,11 +17,11 @@
  *  The effective transparency can be set by changing the
  *  <code>modalTransparency</code> value from 0.0 (fully transparent)
  *  to 1.0 (fully opaque).
- *  You can also set the color of the overlay by changing the 
+ *  You can also set the color of the overlay by changing the
  *  <code>modalTransparencyColor</code> style.
  *
  *  @default 0.5
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -31,12 +31,12 @@
 
 /**
  *  The blur applied to the application while a modal window is open.
- *  A Blur effect softens the details of an image. 
- *  
+ *  A Blur effect softens the details of an image.
+ *
  *  @see flash.filters.BlurFilter
  *
  *  @default 3
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -46,11 +46,11 @@
 
 /**
  *  Color of the modal overlay layer. This style is used in conjunction
- *  with the <code>modalTransparency</code> style to determine the colorization 
+ *  with the <code>modalTransparency</code> style to determine the colorization
  *  applied to the application when a modal window is open.
  *
  *  @default #DDDDDD
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -63,7 +63,7 @@
  *  plays when a modal window opens or closes.
  *
  *  @default 100
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

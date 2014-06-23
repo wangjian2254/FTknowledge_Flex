@@ -8,17 +8,10 @@
     <fx:Script><![CDATA[
         import httpcontrol.HttpServiceUtil;
 
-        import json.JParser;
-
         import mx.collections.ArrayCollection;
-
         import mx.controls.Alert;
         import mx.controls.DataGrid;
-        import mx.core.FlexGlobals;
-        import mx.events.CloseEvent;
-        import mx.managers.CursorManager;
         import mx.managers.PopUpManager;
-
         import mx.rpc.events.ResultEvent;
 
         [Bindable]
@@ -29,52 +22,52 @@
         private var file:FileReference;
         private var byteArray:ByteArray;
         private var bitmapData:BitmapData;
-        private var loader:Loader=new Loader();
+        private var loader:Loader = new Loader();
 
-        private function sendTax():void{
-            if(!taxNo.text){
-                Alert.show("必须填写规则名称","警告");
-            }else{
+        private function sendTax():void {
+            if (!taxNo.text) {
+                Alert.show("必须填写规则名称", "警告");
+            } else {
                 saveRule();
             }
         }
-        private function saveRule():void{
-            var data:Object=new Object();
-            data["templateid"]=orderdata.id;
-            data["name"]=taxNo.text;
 
-            HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRule",saveRuleResult,"POST").send(data);
+        private function saveRule():void {
+            var data:Object = new Object();
+            data["templateid"] = orderdata.id;
+            data["name"] = taxNo.text;
+
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRule", saveRuleResult, "POST").send(data);
         }
 
-        private function saveRuleResult(result:Object,event:ResultEvent):void{
-            if(result.success){
+        private function saveRuleResult(result:Object, event:ResultEvent):void {
+            if (result.success) {
                 var l:ArrayCollection = grid.dataProvider as ArrayCollection;
-                if(l){
+                if (l) {
                     l.addItem(result.result);
                     grid.invalidateList();
                 }
                 closeWin();
             }
         }
-        private function closeWin():void{
-            if(grid){
+
+        private function closeWin():void {
+            if (grid) {
                 grid.invalidateList();
             }
             PopUpManager.removePopUp(this);
         }
-
-
-
-
         ]]></fx:Script>
-<s:Form width="100%" height="100%">
-    <s:FormItem label="规则名称："><s:TextInput id="taxNo" width="300" ></s:TextInput> </s:FormItem>
+    <s:Form width="100%" height="100%">
+        <s:FormItem label="规则名称：">
+            <s:TextInput id="taxNo" width="300"></s:TextInput>
+        </s:FormItem>
 
-    <mx:ControlBar>
-        <s:Button label="保存" click="sendTax()" ></s:Button>
-        <s:Button label="取消" click="closeWin()"></s:Button>
-    </mx:ControlBar>
-</s:Form>
+        <mx:ControlBar>
+            <s:Button label="保存" click="sendTax()"></s:Button>
+            <s:Button label="取消" click="closeWin()"></s:Button>
+        </mx:ControlBar>
+    </s:Form>
     <uicontrol:CProgressBar id="bar" width="100%" height="100%" visible="false">
     </uicontrol:CProgressBar>
 </s:TitleWindow>

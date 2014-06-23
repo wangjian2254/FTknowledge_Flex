@@ -14,7 +14,7 @@
  *
  *  The default value for the Halo theme is <code>0x0B333C</code>.
  *  The default value for the Spark theme is <code>0x000000</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -32,7 +32,7 @@
  *
  *  <p>FTE and TLF use this value in their bidirectional text layout algorithm,
  *  which maps Unicode character order to glyph order.</p>
- * 
+ *
  *  <p>Note: This style only applies when an MX component
  *  specifies UIFTETextField as its <code>textFieldClass</code>.</p>
  *
@@ -54,7 +54,7 @@
  *  Color of text in the component if it is disabled.
  *
  *  @default 0xAAB3B3
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -63,23 +63,23 @@
 [Style(name="disabledColor", type="uint", format="Color", inherit="yes")]
 
 /**
- *  Sets the <code>antiAliasType</code> property of internal TextFields. The possible values are 
- *  <code>"normal"</code> (<code>flash.text.AntiAliasType.NORMAL</code>) 
- *  and <code>"advanced"</code> (<code>flash.text.AntiAliasType.ADVANCED</code>). 
- *  
+ *  Sets the <code>antiAliasType</code> property of internal TextFields. The possible values are
+ *  <code>"normal"</code> (<code>flash.text.AntiAliasType.NORMAL</code>)
+ *  and <code>"advanced"</code> (<code>flash.text.AntiAliasType.ADVANCED</code>).
+ *
  *  <p>The default value is <code>"advanced"</code>, which enables advanced anti-aliasing for the font.
  *  Set to <code>"normal"</code> to disable the advanced anti-aliasing.</p>
- *  
+ *
  *  <p>This style has no effect for system fonts.</p>
- *  
- *  <p>This style applies to all the text in a TextField subcontrol; 
+ *
+ *  <p>This style applies to all the text in a TextField subcontrol;
  *  you cannot apply it to some characters and not others.</p>
 
  *  @default "advanced"
- * 
+ *
  *  @see flash.text.TextField
  *  @see flash.text.AntiAliasType
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -94,10 +94,10 @@
  *  You can use any font family name.
  *  If you specify a generic font name,
  *  it is converted to an appropriate device font.
- * 
+ *
  *  The default font for the Halo theme is <code>"Verdana"</code>.
  *  The default font for the Spark theme is <code>"Arial"</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -107,24 +107,24 @@
 
 /**
  *  Sets the <code>gridFitType</code> property of internal TextFields that represent text in Flex controls.
- *  The possible values are <code>"none"</code> (<code>flash.text.GridFitType.NONE</code>), 
+ *  The possible values are <code>"none"</code> (<code>flash.text.GridFitType.NONE</code>),
  *  <code>"pixel"</code> (<code>flash.text.GridFitType.PIXEL</code>),
- *  and <code>"subpixel"</code> (<code>flash.text.GridFitType.SUBPIXEL</code>). 
- *  
- *  <p>This property only applies when you are using an embedded font 
- *  and the <code>fontAntiAliasType</code> property 
+ *  and <code>"subpixel"</code> (<code>flash.text.GridFitType.SUBPIXEL</code>).
+ *
+ *  <p>This property only applies when you are using an embedded font
+ *  and the <code>fontAntiAliasType</code> property
  *  is set to <code>"advanced"</code>.</p>
- *  
+ *
  *  <p>This style has no effect for system fonts.</p>
- * 
- *  <p>This style applies to all the text in a TextField subcontrol; 
+ *
+ *  <p>This style applies to all the text in a TextField subcontrol;
  *  you can't apply it to some characters and not others.</p>
- * 
+ *
  *  @default "pixel"
- *  
+ *
  *  @see flash.text.TextField
  *  @see flash.text.GridFitType
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -134,22 +134,22 @@
 
 /**
  *  Sets the <code>sharpness</code> property of internal TextFields that represent text in Flex controls.
- *  This property specifies the sharpness of the glyph edges. The possible values are Numbers 
- *  from -400 through 400. 
- *  
- *  <p>This property only applies when you are using an embedded font 
- *  and the <code>fontAntiAliasType</code> property 
+ *  This property specifies the sharpness of the glyph edges. The possible values are Numbers
+ *  from -400 through 400.
+ *
+ *  <p>This property only applies when you are using an embedded font
+ *  and the <code>fontAntiAliasType</code> property
  *  is set to <code>"advanced"</code>.</p>
- *  
+ *
  *  <p>This style has no effect for system fonts.</p>
- * 
- *  <p>This style applies to all the text in a TextField subcontrol; 
+ *
+ *  <p>This style applies to all the text in a TextField subcontrol;
  *  you can't apply it to some characters and not others.</p>
- *  
+ *
  *  @default 0
- *  
+ *
  *  @see flash.text.TextField
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -163,9 +163,9 @@
  *  In the Halo theme, the default value is 10 for all controls except
  *  the ColorPicker control. For the Halo themed ColorPicker control,
  *  the default value is 11. In the Spark theme, the default value is
- *  12 for all controls except the ColorPicker control. For the Spark 
+ *  12 for all controls except the ColorPicker control. For the Spark
  *  themed ColorPicker control, the default value is 11.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -176,9 +176,9 @@
 /**
  *  Determines whether the text is italic font.
  *  Recognized values are <code>"normal"</code> and <code>"italic"</code>.
- * 
+ *
  *  @default "normal"
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -189,21 +189,21 @@
 /**
  *  Sets the <code>thickness</code> property of internal TextFields that represent text in Flex controls.
  *  This property specifies the thickness of the glyph edges.
- *  The possible values are Numbers from -200 to 200. 
- *  
- *  <p>This property only applies when you are using an embedded font 
- *  and the <code>fontAntiAliasType</code> property 
+ *  The possible values are Numbers from -200 to 200.
+ *
+ *  <p>This property only applies when you are using an embedded font
+ *  and the <code>fontAntiAliasType</code> property
  *  is set to <code>"advanced"</code>.</p>
- *  
+ *
  *  <p>This style has no effect on system fonts.</p>
- * 
- *  <p>This style applies to all the text in a TextField subcontrol; 
+ *
+ *  <p>This style applies to all the text in a TextField subcontrol;
  *  you can't apply it to some characters and not others.</p>
- *  
+ *
  *  @default 0
- *  
+ *
  *  @see flash.text.TextField
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -214,9 +214,9 @@
 /**
  *  Determines whether the text is boldface.
  *  Recognized values are <code>normal</code> and <code>bold</code>.
- *  The default value for Button controls is <code>bold</code>. 
+ *  The default value for Button controls is <code>bold</code>.
  *  The default value for all other controls is <code>normal</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -230,12 +230,12 @@
  *  Kerning adjusts the gap between certain character pairs
  *  to improve readability, and should be used only when necessary,
  *  such as with headings in large fonts.
- *  Kerning is supported for embedded fonts only. 
+ *  Kerning is supported for embedded fonts only.
  *  Certain fonts, such as Verdana, and monospaced fonts,
  *  such as Courier New, do not support kerning.
  *
  *  @default false
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -247,9 +247,9 @@
  *  The number of additional pixels to appear between each character.
  *  A positive value increases the character spacing beyond the normal spacing,
  *  while a negative value decreases it.
- * 
+ *
  *  @default 0
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -259,7 +259,7 @@
 
 /**
  *  The locale of the text displayed by this component.
- * 
+ *
  *  <p>FTE and TLF use this locale to map Unicode characters
  *  to font glyphs and to find fallback fonts.</p>
  *
@@ -279,7 +279,7 @@
  *  Alignment of text within a container.
  *  Possible values are <code>"left"</code>, <code>"right"</code>,
  *  or <code>"center"</code>.
- * 
+ *
  *  <p>The default value for most components is <code>"left"</code>.
  *  For the FormItem component,
  *  the default value is <code>"right"</code>.
@@ -290,7 +290,7 @@
  *  <code>"right"</code>.
  *  If <code>labelPlacement</code> is set to <code>"top"</code> or
  *  <code>"bottom"</code>, the text and any icon are centered.</p>
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -301,9 +301,9 @@
 /**
  *  Determines whether the text is underlined.
  *  Possible values are <code>"none"</code> and <code>"underline"</code>.
- * 
+ *
  *  @default "none"
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -322,7 +322,7 @@
  *  including bidirectional layout).</p>
  *
  *  @default mx.core.UITextField
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 10
  *  @playerversion AIR 1.5
@@ -332,9 +332,9 @@
 
 /**
  *  Offset of first line of text from the left side of the container, in pixels.
- * 
+ *
  *  @default 0
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

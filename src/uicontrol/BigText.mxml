@@ -1,29 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
-<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" 
-				   xmlns:s="library://ns.adobe.com/flex/spark" 
-				   xmlns:mx="library://ns.adobe.com/flex/mx" minWidth="500" minHeight="500" creationComplete="movePos()" close="close()">
-	<s:layout>
-		<s:BasicLayout/>
-	</s:layout>
-	<fx:Script>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+               xmlns:s="library://ns.adobe.com/flex/spark"
+               minWidth="500" minHeight="500" creationComplete="movePos()"
+               close="close()">
+    <s:layout>
+        <s:BasicLayout/>
+    </s:layout>
+    <fx:Script>
 		<![CDATA[
-			import mx.core.FlexGlobals;
-			import mx.managers.PopUpManager;
-			[Bindable]
-			public var data:String="";
-			private function close(e:Event=null):void{
-				PopUpManager.removePopUp(this);
-			}
-			private function movePos():void{
-				this.x=(FlexGlobals.topLevelApplication.width-this.width)/2;
-				this.y=(FlexGlobals.topLevelApplication.height-this.height)/2;
-			}
-		]]>
+        import mx.core.FlexGlobals;
+        import mx.managers.PopUpManager;
+
+        [Bindable]
+        public var data:String = "";
+
+        private function close(e:Event = null):void {
+            PopUpManager.removePopUp(this);
+        }
+
+        private function movePos():void {
+            this.x = (FlexGlobals.topLevelApplication.width - this.width) / 2;
+            this.y = (FlexGlobals.topLevelApplication.height - this.height) / 2;
+        }
+        ]]>
 	</fx:Script>
-	<fx:Declarations>
-		<!-- 将非可视元素（例如服务、值对象）放在此处 -->
-	</fx:Declarations>
-	<s:TextArea width="100%" height="100%" text="{data}" editable="false" fontSize="15">
-		
-	</s:TextArea>
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+    </fx:Declarations>
+    <s:TextArea width="100%" height="100%" text="{data}" editable="false" fontSize="15">
+
+    </s:TextArea>
 </s:TitleWindow>

@@ -18,9 +18,9 @@
  *  when the component is in a mouse-over state.
  *  The global default value is <code>[ 0.60, 0.40, 0.75, 0.65 ]</code>.
  *  Some components, such as the ApplicationControlBar container,
- *  have a different default value. For the ApplicationControlBar container, 
+ *  have a different default value. For the ApplicationControlBar container,
  *  the default value is <code>[ 0.0, 0.0 ]</code>.
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1
@@ -41,9 +41,9 @@
  *  The default value is
  *  <code>[ 0xFFFFFF, 0xCCCCCC, 0xFFFFFF, 0xEEEEEE ]</code>.
  *  <p>Some components, such as the ApplicationControlBar container,
- *  have a different default value. For the ApplicationControlBar container, 
+ *  have a different default value. For the ApplicationControlBar container,
  *  the default value is <code>[ 0xFFFFFF, 0xFFFFFF ]</code>.</p>
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

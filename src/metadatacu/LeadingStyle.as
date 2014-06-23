@@ -14,7 +14,7 @@
  *
  *  <p>The default value is 2.</p>
  *  <p>The default value for the ComboBox control is 0.</p>
- *  
+ *
  *  @langversion 3.0
  *  @playerversion Flash 9
  *  @playerversion AIR 1.1

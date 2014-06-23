@@ -6,20 +6,15 @@
                xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:uicontrol="uicontrol.*" width="400" height="500"
                close="closeWin()" creationComplete="init()" title="添加模板">
     <fx:Script><![CDATA[
-        import httpcontrol.HttpServiceUtil;
-
         import json.JParser;
 
         import mx.collections.ArrayCollection;
-
         import mx.controls.Alert;
         import mx.controls.DataGrid;
         import mx.core.FlexGlobals;
         import mx.events.CloseEvent;
         import mx.managers.CursorManager;
         import mx.managers.PopUpManager;
-
-        import mx.rpc.events.ResultEvent;
 
         [Bindable]
         public var orderdata:Object;
@@ -29,58 +24,54 @@
         private var file:FileReference;
         private var byteArray:ByteArray;
         private var bitmapData:BitmapData;
-        private var loader:Loader=new Loader();
+        private var loader:Loader = new Loader();
 
-        private function init():void{
+        private function init():void {
             file = new FileReference();
             file.addEventListener(Event.SELECT, fileReferenceSelectHandler);
-            file.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA,uploadImageResult);
+            file.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, uploadImageResult);
         }
 
-        private function sendTax():void{
-            if(!taxNo.text){
-                Alert.show("必须填写模板名称","警告");
-            }else{
+        private function sendTax():void {
+            if (!taxNo.text) {
+                Alert.show("必须填写模板名称", "警告");
+            } else {
                 toUpload();
             }
         }
 
         //上传图片到服务器
-        private function confirmHandler(e:mx.events.CloseEvent):void
-        {
-            if (e.detail == Alert.YES){
+        private function confirmHandler(e:CloseEvent):void {
+            if (e.detail == Alert.YES) {
                 closeWin();
             }
         }
-        private function closeWin():void{
-            if(grid){
+
+        private function closeWin():void {
+            if (grid) {
                 grid.invalidateList();
             }
             PopUpManager.removePopUp(this);
         }
 
         //选择上传的图片
-        private function choose():void
-        {
-            file.removeEventListener(Event.COMPLETE,completeHandle);
-            file.addEventListener(Event.COMPLETE,fileReferenceCompleteHandler);
-            var imageTypes:FileFilter=new FileFilter("Images (*.jpg, *.jpeg, *.png)", "*.jpg;*.jpeg;*.png");
-            var allTypes:Array=new Array(imageTypes);
+        private function choose():void {
+            file.removeEventListener(Event.COMPLETE, completeHandle);
+            file.addEventListener(Event.COMPLETE, fileReferenceCompleteHandler);
+            var imageTypes:FileFilter = new FileFilter("Images (*.jpg, *.jpeg, *.png)", "*.jpg;*.jpeg;*.png");
+            var allTypes:Array = new Array(imageTypes);
             file.browse(allTypes);
             //                file.browse();
         }
 
-        private function toUpload():void
-        {
-            if (bitmapData == null)
-            {
+        private function toUpload():void {
+            if (bitmapData == null) {
                 Alert.show("请您先选择要上传的图片");
             }
-            else
-            {
-                if(byteArray!=null){
-                    file.removeEventListener(Event.COMPLETE,fileReferenceCompleteHandler);
-                    file.addEventListener(Event.COMPLETE,completeHandle);
+            else {
+                if (byteArray != null) {
+                    file.removeEventListener(Event.COMPLETE, fileReferenceCompleteHandler);
+                    file.addEventListener(Event.COMPLETE, completeHandle);
                     proceedWithUpload();
                 }
 //                Alert.show("上传 " + file.name + " (共 " + Math.round(file.size) + " 字节)?", "确认上传", Alert.YES | Alert.NO, null, proceedWithUpload);
@@ -88,42 +79,37 @@
         }
 
         //监听文件上传状态
-        private function onProgress(e:ProgressEvent):void
-        {
+        private function onProgress(e:ProgressEvent):void {
 //				lbProgress.text=" 已上传 " + e.bytesLoaded + " 字节，共 " + e.bytesTotal + " 字节";
-            var proc:uint=e.bytesLoaded / e.bytesTotal * 100;
+            var proc:uint = e.bytesLoaded / e.bytesTotal * 100;
             bar.setProgress(proc, 100);
-            bar.label="当前进度: " + " " + proc + "%";
-            if (e.bytesLoaded == e.bytesTotal)
-            {
+            bar.label = "当前进度: " + " " + proc + "%";
+            if (e.bytesLoaded == e.bytesTotal) {
                 CursorManager.removeBusyCursor();
             }
         }
 
         //上传图片到服务器
-        private function proceedWithUpload():void
-        {
+        private function proceedWithUpload():void {
 
             //进度监听
             file.addEventListener(ProgressEvent.PROGRESS, onProgress);
-            var request:URLRequest=new URLRequest("/tax/taxTemplateUploaded?name="+taxNo.text);
+            var request:URLRequest = new URLRequest("/tax/taxTemplateUploaded?name=" + taxNo.text);
             request.method = URLRequestMethod.POST;
 
             request.contentType = "multipart/form-data";
 
 
-            bar.visible=true;
+            bar.visible = true;
 
 
             //设置鼠标忙状态
             CursorManager.setBusyCursor();
-            try
-            {
-                file.upload(request,'file',true);
+            try {
+                file.upload(request, 'file', true);
 
             }
-            catch (error:Error)
-            {
+            catch (error:Error) {
                 Alert.show("上传失败");
                 bar.visible = false;
             }
@@ -132,83 +118,80 @@
         }
 
         //上传完成调用
-        private function completeHandle(event:Event):void
-        {
-            byteArray=null;
+        private function completeHandle(event:Event):void {
+            byteArray = null;
             bar.visible = false;
             img.source = null;
 
         }
 
-        private function uploadImageResult(e:DataEvent):void{
-            try{
-                var result:Object=JParser.decode(e.data);
-                if(result.success==true){
+        private function uploadImageResult(e:DataEvent):void {
+            try {
+                var result:Object = JParser.decode(e.data);
+                if (result.success == true) {
                     img.source = result.result.imgurl;
 
                     var l:ArrayCollection = grid.dataProvider as ArrayCollection;
-                    if(l){
+                    if (l) {
                         l.addItem(result.result);
                         grid.invalidateList();
                     }
                     closeWin();
 
                 }
-            }catch(error:Error){
+            } catch (error:Error) {
 
-                var i:Number =1;
+                var i:Number = 1;
             }
         }
 
         //载入本地图片
-        private function fileReferenceCompleteHandler(e:Event):void
-        {
-            byteArray=file.data;
+        private function fileReferenceCompleteHandler(e:Event):void {
+            byteArray = file.data;
             loader.contentLoaderInfo.addEventListener(Event.COMPLETE, loaderCompleteHandler);
             loader.loadBytes(byteArray);
 
         }
 
         //图片载入完成显示在预览框中
-        private function loaderCompleteHandler(e:Event):void
-        {
-            var bitmap:Bitmap=Bitmap(loader.content);
-            bitmapData=bitmap.bitmapData;
-            img.source=bitmap;
+        private function loaderCompleteHandler(e:Event):void {
+            var bitmap:Bitmap = Bitmap(loader.content);
+            bitmapData = bitmap.bitmapData;
+            img.source = bitmap;
         }
 
         //选择文件动作监听
-        private function fileReferenceSelectHandler(e:Event):void
-        {
+        private function fileReferenceSelectHandler(e:Event):void {
             file.removeEventListener(ProgressEvent.PROGRESS, onProgress);
             file.load();
         }
 
-        private function bigImage(event:MouseEvent):void{
-            if(event.currentTarget is Image){
+        private function bigImage(event:MouseEvent):void {
+            if (event.currentTarget is Image) {
                 //					Alert.show(event.currentTarget.source,"图片地址");
-                var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject,BigImage,true) as BigImage;
+                var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigImage, true) as BigImage;
                 s.imgurl = event.currentTarget.source;
             }
 
 
         }
-
         ]]></fx:Script>
-<s:Form width="100%" height="100%">
-    <s:FormItem label="模板名称："><s:TextInput id="taxNo" width="300" ></s:TextInput> </s:FormItem>
-    <s:FormItem label="图片：">
-        <s:layout>
-            <s:VerticalLayout></s:VerticalLayout>
-        </s:layout>
-        <s:Button label="选择图片" click="choose()"></s:Button>
-        <s:Image id="img"  height="300"></s:Image>
-    </s:FormItem>
-    <mx:ControlBar>
-        <s:Button label="上传" click="sendTax()" ></s:Button>
-        <s:Button label="取消" click="closeWin()"></s:Button>
-    </mx:ControlBar>
-</s:Form>
+    <s:Form width="100%" height="100%">
+        <s:FormItem label="模板名称：">
+            <s:TextInput id="taxNo" width="300"></s:TextInput>
+        </s:FormItem>
+        <s:FormItem label="图片：">
+            <s:layout>
+                <s:VerticalLayout></s:VerticalLayout>
+            </s:layout>
+            <s:Button label="选择图片" click="choose()"></s:Button>
+            <s:Image id="img" height="300"></s:Image>
+        </s:FormItem>
+        <mx:ControlBar>
+            <s:Button label="上传" click="sendTax()"></s:Button>
+            <s:Button label="取消" click="closeWin()"></s:Button>
+        </mx:ControlBar>
+    </s:Form>
     <uicontrol:CProgressBar id="bar" width="100%" height="100%" visible="false">
     </uicontrol:CProgressBar>
 </s:TitleWindow>
