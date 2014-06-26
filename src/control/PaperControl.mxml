@@ -15,6 +15,10 @@
         import mx.events.ItemClickEvent;
         import mx.rpc.events.ResultEvent;
 
+        import util.ToolUtil;
+
+        import util.ToolUtil;
+
         [Bindable]
         private var buttonArr1:ArrayCollection = new ArrayCollection([
             {'label': '刷新所有数据', 'ico': refreshimg, 'mode': 'refresh'},
@@ -36,6 +40,7 @@
             if (item.mode == 'refresh') {
                 loadPaper();
                 loadSubject();
+                ToolUtil.guanRefresh();
             }
             if (item.mode == 'add') {
                 resetFormData();
@@ -62,7 +67,6 @@
                 }
                 arr = result.result.result;
                 paperArr = new ArrayCollection(arr);
-                paperArr.filterFunction = filterSubjectTitle;
             }
         }
 
@@ -134,13 +138,36 @@
 
         private function doRightPaper():void{
 
-            if(tempPaper==null||tempPaper.hasOwnProperty("id")){
+            if(tempPaper==null||!tempPaper.hasOwnProperty("id")){
                 Alert.show("请先保存试卷","提示");
             }else{
                 var o:Object = new Object();
                 o['id'] = tempPaper['id'];
-                HttpServiceUtil.getCHTTPServiceAndResult("/tax/doRightPaper", delPaperDataResult, "POST").send(o);
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/doRightPaper", doRightPaperResult, "POST").send(o);
             }
+        }
+
+        private function doRightPaperResult(result:Object,event:ResultEvent):void{
+            if(result.success){
+                tempPaper.right_ztdm=result.result;
+                ztdm.text = tempPaper.right_ztdm;
+                Alert.show("创建标准账套成功,是否去设置正确答案？","提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
+                    if (e.detail == Alert.YES) {
+                        gotoURL();
+                    }
+                });
+
+            }
+        }
+        private function gotoURL(){
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getYSX_Login_URL", gotoYSX, "POST").send();
+        }
+        private function gotoYSX(result:Object,event:ResultEvent){
+            if(result.success){
+                var request:URLRequest = new URLRequest(result.result);
+                navigateToURL(request, "_blank");
+            }
+
         }
 
         private function resetFormData():void {
@@ -149,6 +176,7 @@
             ztdm.text = "";
             paperSubjectArr.removeAll();
             tempPaper = null;
+            guanComboBox.selectedItem=null;
 
 
         }
@@ -165,6 +193,11 @@
             o["content"] = content.text;
             o["is_pub"] = is_pub.selected;
             o["right_ztdm"] = ztdm.text;
+            if(guanComboBox.selectedItem){
+                o["guan"]=guanComboBox.selectedItem.id;
+            }else{
+                o["guan"]="";
+            }
             return o;
         }
 
@@ -173,6 +206,15 @@
             content.text = o["content"];
             is_pub.selected = o["is_pub"];
             ztdm.text = o["right_ztdm"];
+            if(o["guan_id"]){
+                for each(var obj:Object in ToolUtil.guanList){
+                    if(obj["id"]==o["guan_id"]){
+                        guanComboBox.selectedItem=obj;
+                    }
+                }
+            }else{
+                guanComboBox.selectedItem=null;
+            }
 
 
         }
@@ -322,6 +364,10 @@
                             <s:GridColumn headerText="试卷" dataField="title" dataTipField="title" >
 
                             </s:GridColumn>
+                            <s:GridColumn headerText="关卡" dataField="guan_id" labelFunction="ToolUtil.lblShowGuan">
+
+                            </s:GridColumn>
+
                             <s:GridColumn headerText="是否发布" width="80" dataField="is_pub" labelFunction="pubShow">
 
                             </s:GridColumn>
@@ -343,8 +389,17 @@
                             <s:TextArea id="content" height="150" width="100%" prompt="试卷介绍">
                             </s:TextArea>
                         </s:FormItem>
+                        <s:FormItem label="隶属关卡:" width="80%">
+                            <s:layout>
+                                <s:HorizontalLayout gap="10"></s:HorizontalLayout>
+                            </s:layout>
+                            <mx:ComboBox id="guanComboBox" dataProvider="{ToolUtil.guanList}" labelField="name"></mx:ComboBox><s:Button label="不关联关卡" click="{guanComboBox.selectedItem=null;}"></s:Button>
+                        </s:FormItem>
                         <s:FormItem label="是否发布:" width="80%">
                             <s:CheckBox id="is_pub" label="是否发布" selected="true"></s:CheckBox>
+                        </s:FormItem>
+                        <s:FormItem label="标准账套:" width="80%">
+                            <s:TextInput  id="ztdm" enabled="false"></s:TextInput>
                         </s:FormItem>
                         <mx:ControlBar>
                             <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25"
@@ -352,9 +407,11 @@
                             </s:Button>
                             <s:Button id="delBtn" label="删除" height="25" enabled="false" click="delPaper();">
                             </s:Button>
-                            <s:Button id="ztdmButton" label="设置标准答案" height="25" enabled="{delBtn.enabled}" click="doRightPaper();">
+                            <s:Button id="ztdmButton" label="重置标准答案账套" height="25" enabled="{delBtn.enabled}" click="doRightPaper();">
                             </s:Button>
-                            <s:TextInput visible="false" id="ztdm"></s:TextInput>
+                            <s:Button  label="进入帐套" height="25" enabled="{delBtn.enabled}" click="gotoURL();">
+                            </s:Button>
+
                         </mx:ControlBar>
                         <s:FormItem width="80%" id="content3" label="试题:">
                             <s:layout>

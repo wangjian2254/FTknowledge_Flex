@@ -21,6 +21,7 @@ public class ToolUtil {
         ticketRefresh();
         businessRefresh();
         kmRefresh();
+        guanRefresh();
     }
 
 
@@ -260,6 +261,39 @@ public class ToolUtil {
             kmList.removeAll();
             kmList.addAll(new ArrayCollection(result.result as Array));
         }
+    }
+
+    [Bindable]
+    public static var guanList:ArrayCollection = new ArrayCollection();
+
+    public static function guanRefresh(fun:Function = null):void {
+
+        if (fun == null) {
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllGuan", resultAllGuan, "POST").send();
+        } else {
+            var http:CHTTPService = HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllGuan", resultAllGuan, "POST");
+            http.resultFunArr.addItem(fun);
+            http.send();
+
+        }
+
+    }
+
+
+    public static function resultAllGuan(result:Object, e:ResultEvent):void {
+        if (result.success == true) {
+            guanList.removeAll();
+            guanList.addAll(new ArrayCollection(result.result.result as Array));
+        }
+    }
+
+    public static function lblShowGuan(item:Object, column:*):String{
+        for each(var obj:Object in guanList){
+            if(obj["id"]==item["guan_id"]){
+                return obj["name"];
+            }
+        }
+        return "";
     }
 
     [Bindable]

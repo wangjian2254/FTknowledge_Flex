@@ -68,7 +68,7 @@
                 data["templateid"] = taxtemplateGrid.selectedItem.id;
                 HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList", getRuleDataResult, "POST").send(data);
                 tempItem = taxtemplateGrid.selectedItem;
-                taxImg.source = tempItem.imgurl;
+                taxImg.source = tempItem.imgurl+"?flag="+(showZB.selected?"1":"0");
             }
         }
 
@@ -118,7 +118,7 @@
                 ruleItemList.removeAll();
                 ruleItemList.addAll(new ArrayCollection(result.result as Array));
 
-                taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id + "&t=" + new Date();
+                taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id +"&flag="+(showZB.selected?"1":"0")+ "&t=" + new Date();
             }
         }
 
@@ -158,6 +158,9 @@
             if (e.label == "刷新图片") {
                 saveRuleItem();
             }
+            if (e.label == "拷贝规则") {
+                copyRuleItem();
+            }
         }
 
         public function del():void {
@@ -195,6 +198,21 @@
             }
         }
 
+        private function copyRuleItem():void{
+            if (taxtemplateRule.selectedItem) {
+                var data:Object = new Object();
+                data["ruleid"] = taxtemplateRule.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/copyRuleItem", copyRuleItemResult, "POST").send(data);
+            }
+        }
+        private function copyRuleItemResult(result:Object, event:ResultEvent):void {
+            if (result.success) {
+                var data:Object = new Object();
+                data["templateid"] = taxtemplateGrid.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList", getRuleDataResult, "POST").send(data);
+            }
+        }
+
         private function saveRuleItem():void {
             if (taxtemplateRule.selectedItem) {
 
@@ -207,11 +225,11 @@
                         data["id" + i] = obj.id;
                     }
                     obj.index = i + 1;
-                    if (!obj.x && !obj.y && !obj.size && obj.color === "" && !obj.family && !obj.word) {
+                    if (!obj.x && !obj.y && !obj.size ) {
                         ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
                         continue;
                     }
-                    if (!obj.x || !obj.y || !obj.size || !obj.family || !obj.word) {
+                    if (!obj.x || !obj.y || !obj.size || !obj.family || obj.word==='') {
                         Alert.show("请填写必要参数", "警告");
                         return;
                     }
@@ -238,7 +256,7 @@
                     ruleItemList.getItemAt(i)["id"] = result.result["ids"][i];
                 }
                 ruleitemgrid.invalidateList();
-                taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id + "&t=" + new Date();
+                taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id +"&flag="+(showZB.selected?"1":"0")+ "&t=" + new Date();
             }
         }
 
@@ -247,7 +265,8 @@
         private var btnlist:ArrayCollection = new ArrayCollection([
             {'label': '新增', 'ico': addimg},
             {'label': '删除', 'ico': delimg},
-            {'label': '刷新图片', 'ico': refreshimg}
+            {'label': '刷新图片', 'ico': refreshimg},
+            {'label': '拷贝规则', 'ico': saveimg}
         ]);
 
 
@@ -296,9 +315,13 @@
         <s:VGroup width="100%" height="100%">
             <s:Image id="taxImg" x="0" y="0" height="100%"></s:Image>
 
-            <mx:ButtonBar dataProvider="{btnlist}" iconField="ico" height="30" itemClick="clickHander(event)">
+            <s:HGroup width="100%" height="30" gap="20">
+                <mx:ButtonBar dataProvider="{btnlist}" iconField="ico" height="30" itemClick="clickHander(event)">
 
-            </mx:ButtonBar>
+                </mx:ButtonBar>
+                <s:CheckBox id="showZB"  label="显示坐标" selected="true" ></s:CheckBox>
+            </s:HGroup>
+
             <s:Scroller width="100%" height="300">
                 <s:Group width="100%" height="100%">
                     <uicontrol:MarkAdvancedDataGrid id="ruleitemgrid" dataProvider="{ruleItemList}" isNewAdd="true"
@@ -341,41 +364,7 @@
                             <mx:AdvancedDataGridColumn headerText="字体大小" dataField="size" width="100">
 
                             </mx:AdvancedDataGridColumn>
-                            <mx:AdvancedDataGridColumn headerText="字体颜色" dataField="color" rendererIsEditor="true"
-                                                       editorDataField="data" width="100">
-                                <mx:itemRenderer>
-                                    <fx:Component>
-                                        <mx:HBox>
-                                            <fx:Script>
-                                            <![CDATA[
-                                                private var vv:Object;
 
-                                                override public function get data():Object {
-                                                    return vv;
-                                                }
-
-                                                override public function set data(v:Object):void {
-                                                    vv = v;
-                                                    if (v) {
-                                                        colorPicker.selectedColor = Number(v["color"]);
-                                                    }
-
-                                                }
-
-                                                private function selectFontColor():void {
-                                                    vv["color"] = colorPicker.selectedColor;
-                                                }
-                                                ]]>
-                                            </fx:Script>
-                                            <mx:ColorPicker id="colorPicker" change="selectFontColor()" color="#010000"
-                                                            selectedColor="#000000"
-                                                            symbolColor="#030002">
-
-                                            </mx:ColorPicker>
-                                        </mx:HBox>
-                                    </fx:Component>
-                                </mx:itemRenderer>
-                            </mx:AdvancedDataGridColumn>
                             <mx:AdvancedDataGridColumn headerText="字体类型" dataField="family" editorDataField="data"
                                                        width="70" labelFunction="fontFamilyFun">
                                 <mx:itemEditor>
@@ -448,7 +437,44 @@
                             <mx:AdvancedDataGridColumn headerText="文字内容" dataField="word" width="200">
 
                             </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="字体颜色" dataField="color" rendererIsEditor="true"
+                                                       editorDataField="data" width="70">
+                                <mx:itemRenderer>
+                                    <fx:Component>
+                                        <mx:HBox>
+                                            <fx:Script>
+                                            <![CDATA[
+                                                private var vv:Object;
 
+                                                override public function get data():Object {
+                                                    return vv;
+                                                }
+
+                                                override public function set data(v:Object):void {
+                                                    vv = v;
+                                                    if (v) {
+                                                        if(v["color"]===""){
+                                                            v["color"]=0;
+                                                        }
+                                                        colorPicker.selectedColor = Number(v["color"]);
+                                                    }
+
+                                                }
+
+                                                private function selectFontColor():void {
+                                                    vv["color"] = colorPicker.selectedColor;
+                                                }
+                                                ]]>
+                                            </fx:Script>
+                                            <mx:ColorPicker id="colorPicker" change="selectFontColor()" color="#010000"
+                                                            selectedColor="#000000"
+                                                            symbolColor="#030002">
+
+                                            </mx:ColorPicker>
+                                        </mx:HBox>
+                                    </fx:Component>
+                                </mx:itemRenderer>
+                            </mx:AdvancedDataGridColumn>
                         </uicontrol:groupedColumns>
 
                     </uicontrol:MarkAdvancedDataGrid>

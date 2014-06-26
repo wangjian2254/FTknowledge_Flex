@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                          xmlns:s="library://ns.adobe.com/flex/spark"
+                          xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" width="700" height="700"
+                          borderVisible="false" backgroundAlpha="0" xmlns:uicontrol="uicontrol.*">
+    <fx:Script>
+		<![CDATA[
+        import events.CloseEvent;
+
+        import httpcontrol.HttpServiceUtil;
+
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.events.FlexEvent;
+        import mx.events.ItemClickEvent;
+        import mx.rpc.events.ResultEvent;
+
+        import util.ToolUtil;
+
+        [Bindable]
+        private var buttonArr1:ArrayCollection = new ArrayCollection([
+            {'label': '刷新所有数据', 'ico': refreshimg, 'mode': 'refresh'},
+            {'label': '新增', 'ico': wximg, 'mode': 'add'}
+        ]);
+
+        private var tempGuan:Object;
+        [Bindable]
+        private var guanArr:ArrayCollection = new ArrayCollection([]);
+        [Bindable]
+        private var guanPaperArr:ArrayCollection = new ArrayCollection([]);
+        [Bindable]
+        private var allPaperArr:ArrayCollection = new ArrayCollection([]);
+
+        //新增，保存，删除,回复，转发的处理函数
+        //多个按钮点击事件的处理函数
+        private function clickHander(e:ItemClickEvent):void {
+            var item:Object = e.item;
+            if (item.mode == 'refresh') {
+                loadGuan();
+                loadPaper();
+            }
+            if (item.mode == 'add') {
+                resetFormData();
+                delBtn.enabled = false;
+            }
+
+        }
+
+
+        private function loadGuan():void {
+            var o:Object = {};//如果需要补齐查询参数
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllGuan", loadGuanDataResult, "POST").send(o);
+        }
+
+        private function loadGuanDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                var arr:Array;
+
+                arr = result.result.result;
+                guanArr = new ArrayCollection(arr);
+            }
+        }
+
+        private function loadPaper():void {
+            var o:Object = {};//如果需要补齐查询参数
+
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllPaperUnGuan", loadPaperDataResult, "POST").send(o);
+        }
+
+        private function loadPaperDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                delBtn.enabled = false;
+                var arr:Array;
+
+                arr = result.result.result is Array ? result.result.result : [];
+
+                allPaperArr = new ArrayCollection(arr);
+            }
+        }
+
+
+        private function saveGuan():void {
+            if (!isValid()) {
+                return;
+            }
+            var o:Object = getFormData();
+            tempGuan = o;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateGuan", saveGuanDataResult, "POST").send(o);
+        }
+
+        private function saveGuanDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                loadGuan();
+                tempGuan['id'] = result.result;
+                delBtn.enabled = true;
+                ToolUtil.guanRefresh();
+            }
+        }
+
+        private function delGuan():void {
+
+            Alert.show("是否删除?", "提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
+                if (e.detail == Alert.YES) {
+                    var o:Object = getFormData();
+                    HttpServiceUtil.getCHTTPServiceAndResult("/tax/delGuan", delGuanDataResult, "POST").send(o);
+                }
+            });
+        }
+
+        private function delGuanDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                loadGuan();
+                resetFormData();
+            }
+        }
+
+
+
+        private function resetFormData():void {
+            title.text = "";
+            flagNumericStepper.value = 0;
+            pointNumericStepper.value = 0;
+            guanPaperArr.removeAll();
+            tempGuan = null;
+
+
+        }
+
+        private function getFormData():Object {
+            var o:Object = {};
+            var n:Object = guanGrid.selectedItem;
+            if (tempGuan != null && tempGuan.hasOwnProperty('id')) {
+                o['id'] = tempGuan['id'];
+            } else {
+                o['id'] = ''
+            }
+            o["name"] = title.text;
+            o["flag"] = flagNumericStepper.value;
+            o["point"] = pointNumericStepper.value;
+
+            return o;
+        }
+
+        private function setFormData(o:Object):void {
+            title.text = o["name"];
+            flagNumericStepper.value=o['flag'];
+            pointNumericStepper.value=o['point'];
+
+
+
+        }
+
+        private function isValid():Boolean {
+            var o:Object = getFormData();
+            if (o["name"] == "") {
+                Alert.show("关卡名字不能为空", "提示");
+                return false;
+            }
+
+
+            if (!o["flag"]) {
+                Alert.show("关卡标记不能为空", "提示");
+                return false;
+            }
+            return true;
+        }
+
+        private function seletGuan():void {
+            var o:Object = guanGrid.selectedItem;
+            tempGuan = o;
+            setFormData(o);
+            delBtn.enabled = true;
+            var data:Object = new Object();
+            data['pid'] = o['id'];
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getPaperByGuan", getPaperByGuanResult, "POST").send(data);
+
+        }
+
+        private function getPaperByGuanResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                guanPaperArr = new ArrayCollection(result.result as Array);
+            }
+        }
+
+        private function seletPaper(f:Boolean):void {
+            if (tempGuan == null || !tempGuan.hasOwnProperty('id')) {
+                Alert.show("请先保存试卷。");
+                return;
+            }
+            if (f) {
+                Alert.show("是否删除:" + paperGrid.selectedItem.title, "提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
+                    if (e.detail == Alert.YES) {
+                        var o:Object = {};
+                        o['gid'] = tempGuan.id;
+                        o["pid"] = paperGrid.selectedItem["id"];
+                        o['do'] = 'del';
+
+                        HttpServiceUtil.getCHTTPServiceAndResult("/tax/doGuanPaper", doGuanPaperDelResult, "POST").send(o);
+                    }
+                });
+            } else {
+                var o:Object = new Object();
+                o['gid'] = tempGuan.id;
+                o["pid"] = allPaperGrid.selectedItem["id"];
+                o['do'] = 'add';
+
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/doGuanPaper", doGuanPaperAddResult, "POST").send(o);
+            }
+        }
+
+        private function doGuanPaperDelResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                if (paperGrid.selectedItem.id == result.result) {
+                    guanPaperArr.removeItemAt(guanPaperArr.getItemIndex(paperGrid.selectedItem));
+                } else {
+                    seletGuan();
+                }
+            }
+        }
+
+        private function doGuanPaperAddResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                if (allPaperGrid.selectedItem.id == result.result) {
+                    guanPaperArr.addItem(allPaperGrid.selectedItem);
+                    allPaperArr.removeItemAt(allPaperArr.getItemIndex(allPaperGrid.selectedItem))
+                } else {
+
+                    seletGuan();
+                }
+            }
+        }
+
+        override public function init(e:FlexEvent):void {
+            loadPaper();
+            loadGuan();
+
+        }
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+        }
+
+        private function typeShow(item:Object, column:GridColumn):String {
+            if (item.type == 1) {
+                return "选择题";
+            } else {
+                return "凭证题";
+            }
+        }
+
+        private function pubShow(item:Object, column:GridColumn):String {
+            if (item.type) {
+                return "发布";
+            } else {
+                return "未发布";
+            }
+        }
+        ]]>
+	</fx:Script>
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+    </fx:Declarations>
+    <s:BorderContainer top="5" bottom="5" left="5" right="5" borderVisible="false" color="0x333333"
+                       skinClass="skins.contentBoxSkin">
+        <s:layout>
+            <s:VerticalLayout>
+
+            </s:VerticalLayout>
+        </s:layout>
+        <s:BorderContainer left="0" top="0" height="45" width="100%" borderVisible="false"
+                           backgroundImage="{CBorderContainer.toolbgimg}">
+            <s:layout>
+                <s:HorizontalLayout gap="20" verticalAlign="middle" paddingLeft="20">
+
+                </s:HorizontalLayout>
+            </s:layout>
+            <s:HGroup height="20">
+
+            </s:HGroup>
+            <mx:ButtonBar id="ba1" dataProvider="{buttonArr1}" selectedIndex="0" doubleClickEnabled="true"
+                          chromeColor="#faf0cc" labelField="label" iconField="ico" height="30"
+                          itemClick="clickHander(event)">
+            </mx:ButtonBar>
+        </s:BorderContainer>
+        <s:BorderContainer height="100%" width="100%" borderVisible="false">
+            <s:layout>
+                <s:HorizontalLayout gap="2">
+
+                </s:HorizontalLayout>
+            </s:layout>
+            <s:VGroup height="100%" width="430">
+                <s:DataGrid id="guanGrid" height="100%" width="100%" showDataTips="true" dataProvider="{guanArr}"
+                             selectionChange="seletGuan();">
+                    <s:columns>
+                        <s:ArrayList>
+                            <s:GridColumn headerText="关卡名字" dataField="name" dataTipField="name" >
+
+                            </s:GridColumn>
+                            <s:GridColumn headerText="关卡标记" width="80" dataField="flag" >
+
+                            </s:GridColumn>
+                            <s:GridColumn headerText="关卡奖金" width="80" dataField="point" >
+
+                            </s:GridColumn>
+                        </s:ArrayList>
+
+                    </s:columns>
+                </s:DataGrid>
+
+            </s:VGroup>
+            <s:Scroller width="100%" height="100%">
+                <s:Group width="100%" height="100%">
+                    <s:Form width="100%" id="formSubject">
+                        <s:FormItem label="关卡名字:" width="80%" id="content1">
+                            <s:TextInput id="title" width="100%" prompt="标题">
+                            </s:TextInput>
+                        </s:FormItem>
+                        <s:FormItem label="关卡标记:" width="80%" >
+                            <s:layout>
+                                <s:HorizontalLayout gap="10"></s:HorizontalLayout>
+                            </s:layout>
+                             <s:NumericStepper id="flagNumericStepper" minimum="1" maximum="999999"></s:NumericStepper><s:Label text="云实训中根据这个字段决定关卡，例如：第一大关的第一小关：10001，第二小关：10002；第二大关的第一二小关：20001,20002" ></s:Label>
+                        </s:FormItem>
+                        <s:FormItem label="关卡奖金:" width="80%">
+                            <s:NumericStepper id="pointNumericStepper" minimum="1" maximum="999999"></s:NumericStepper>
+                        </s:FormItem>
+
+                        <mx:ControlBar>
+                            <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25"
+                                      click="saveGuan();">
+                            </s:Button>
+                            <s:Button id="delBtn" label="删除" height="25" enabled="false" click="delGuan();">
+                            </s:Button>
+
+                        </mx:ControlBar>
+                        <s:FormItem width="80%" id="content3" label="试卷:">
+                            <s:layout>
+                                <s:HorizontalLayout gap="10" horizontalAlign="left"></s:HorizontalLayout>
+                            </s:layout>
+                            <s:DataGrid id="paperGrid" height="700" width="100%" showDataTips="true"
+                                        doubleClickEnabled="true" textAlign="left" dataProvider="{guanPaperArr}"
+                                        doubleClick="seletPaper(true);">
+                                <s:columns>
+                                    <s:ArrayList>
+                                        <s:GridColumn headerText="试卷" dataField="title" dataTipField="title" >
+
+                                        </s:GridColumn>
+                                        <s:GridColumn headerText="是否发布" width="80" dataField="is_pub" labelFunction="pubShow">
+
+                                        </s:GridColumn>
+                                    </s:ArrayList>
+                                </s:columns>
+
+                            </s:DataGrid>
+                            <s:VGroup height="700" width="100%">
+
+                                <s:DataGrid id="allPaperGrid" height="100%" width="100%" showDataTips="true"
+                                            textAlign="left" doubleClickEnabled="true" dataProvider="{allPaperArr}"
+                                            doubleClick="seletPaper(false);">
+                                    <s:columns>
+                                        <s:ArrayList>
+                                            <s:GridColumn headerText="试卷" dataField="title" dataTipField="title" >
+
+                                            </s:GridColumn>
+                                            <s:GridColumn headerText="关卡" dataField="guan_id" labelFunction="ToolUtil.lblShowGuan">
+
+                                            </s:GridColumn>
+
+                                            <s:GridColumn headerText="是否发布" width="80" dataField="is_pub" labelFunction="pubShow">
+
+                                            </s:GridColumn>
+                                        </s:ArrayList>
+                                    </s:columns>
+                                </s:DataGrid>
+                            </s:VGroup>
+                        </s:FormItem>
+
+
+                    </s:Form>
+                </s:Group>
+            </s:Scroller>
+
+
+        </s:BorderContainer>
+    </s:BorderContainer>
+</control:CBorderContainer>

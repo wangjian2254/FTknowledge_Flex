@@ -16,6 +16,7 @@
         import control.BusinessEdit;
         import control.CBorderContainer;
         import control.ChangePassword;
+        import control.GuanControl;
         import control.KaoShiControl;
         import control.KnowledgeEdit;
         import control.KnowledgeQuery;
@@ -263,6 +264,9 @@
                     break;
                 case 'paper':
                     c = new PaperControl();
+                    break;
+                case 'guanqia':
+                    c = new GuanControl();
                     break;
 
 
