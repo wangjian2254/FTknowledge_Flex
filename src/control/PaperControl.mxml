@@ -149,8 +149,12 @@
 
         private function doRightPaperResult(result:Object,event:ResultEvent):void{
             if(result.success){
+                if(!result.result){
+                    return;
+                }
                 tempPaper.right_ztdm=result.result;
                 ztdm.text = tempPaper.right_ztdm;
+
                 Alert.show("创建标准账套成功,是否去设置正确答案？","提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
                     if (e.detail == Alert.YES) {
                         gotoURL();
@@ -159,10 +163,12 @@
 
             }
         }
-        private function gotoURL(){
-            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getYSX_Login_URL", gotoYSX, "POST").send();
+        private function gotoURL():void{
+            var o:Object = new Object();
+            o['id'] = tempPaper['id'];
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getYSX_Login_URL", gotoYSX, "POST").send(o);
         }
-        private function gotoYSX(result:Object,event:ResultEvent){
+        private function gotoYSX(result:Object,event:ResultEvent):void{
             if(result.success){
                 var request:URLRequest = new URLRequest(result.result);
                 navigateToURL(request, "_blank");
