@@ -180,6 +180,7 @@
             title.text = "";
             content.text = "";
             ztdm.text = "";
+            paper_time.value= 5;
             paperSubjectArr.removeAll();
             tempPaper = null;
             guanComboBox.selectedItem=null;
@@ -199,6 +200,7 @@
             o["content"] = content.text;
             o["is_pub"] = is_pub.selected;
             o["right_ztdm"] = ztdm.text;
+            o['time'] = paper_time.value;
             if(guanComboBox.selectedItem){
                 o["guan"]=guanComboBox.selectedItem.id;
             }else{
@@ -210,6 +212,7 @@
         private function setFormData(o:Object):void {
             title.text = o["title"];
             content.text = o["content"];
+            paper_time.value = o['time'];
             is_pub.selected = o["is_pub"];
             ztdm.text = o["right_ztdm"];
             if(o["guan_id"]){
@@ -400,6 +403,9 @@
                                 <s:HorizontalLayout gap="10"></s:HorizontalLayout>
                             </s:layout>
                             <mx:ComboBox id="guanComboBox" dataProvider="{ToolUtil.guanList}" labelField="name"></mx:ComboBox><s:Button label="不关联关卡" click="{guanComboBox.selectedItem=null;}"></s:Button>
+                        </s:FormItem>
+                        <s:FormItem label="考试时间:" width="80%">
+                            <s:NumericStepper id="paper_time" maximum="100" minimum="1" value="5"></s:NumericStepper>
                         </s:FormItem>
                         <s:FormItem label="是否发布:" width="80%">
                             <s:CheckBox id="is_pub" label="是否发布" selected="true"></s:CheckBox>
