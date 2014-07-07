@@ -222,8 +222,8 @@
                 var data:Object = new Object();
                 data["ruleid"] = taxtemplateRule.selectedItem.id;
                 var obj:Object = null;
-                for (var k:int =  ruleItemList.length; k >=0; k--) {
-                    obj = ruleItemList.getItemAt(i);
+                for (var k:int =  ruleItemList.length-1; k >=0; k--) {
+                    obj = ruleItemList.getItemAt(k);
 
                     if (!obj.x && !obj.y && !obj.size ) {
                         ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
