@@ -63,8 +63,12 @@
         private function changehy():void {
             imglist.removeAllElements();
             var obj:Object = new Object();
-            obj["ruleid"] = hy.selectedItem.id;
-            HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTicketByUserRule", getTicketByRuleResult, "POST").send(obj);
+            if( hy.selectedItem){
+                obj["ruleid"] = hy.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/ft/getTicketByUserRule", getTicketByRuleResult, "POST").send(obj);
+            }
+
+
 
         }
 

@@ -6,6 +6,7 @@
     <fx:Script>
 		<![CDATA[
         import events.CloseEvent;
+        import events.PageChangeEvent;
 
         import httpcontrol.HttpServiceUtil;
 
@@ -33,6 +34,9 @@
         [Bindable]
         private var allSubjectArr:ArrayCollection = new ArrayCollection([]);
 
+        [Bindable]
+        private var kindList:ArrayCollection = new ArrayCollection();
+
         //新增，保存，删除,回复，转发的处理函数
         //多个按钮点击事件的处理函数
         private function clickHander(e:ItemClickEvent):void {
@@ -51,20 +55,28 @@
 
         private var isPaging:Boolean = true;
 
-        private function loadPaper():void {
+        private function loadPaper(e:PageChangeEvent=null):void {
             var o:Object = {};//如果需要补齐查询参数
-            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllPaper", loadPaperDataResult, "POST").send(o);
+            o['start']=pagebar1.PageIndex*pagebar1.mPageSize;
+
+            o["kind"] = kindKey.text;
+            var url:String = !o["kind"] || o["kind"] == "" ? "/tax/getAllPaper" : "/tax/getPaperByKind";
+            isPaging = !o["kind"] || o["kind"] == "" ? true : false;
+
+            HttpServiceUtil.getCHTTPServiceAndResult(url, loadPaperDataResult, "POST").send(o);
         }
 
         private function loadPaperDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
                 var arr:Array;
-                if (isPaging) {
+//                if (isPaging) {
                     pagebar1.mPageSize = result.result.limit;
                     pagebar1.RecordCount = result.result.total;
-                    pagebar1.initPage();
+                    if(paperArr.length==0){
+                        pagebar1.initPage();
+                    }
 
-                }
+//                }
                 arr = result.result.result;
                 paperArr = new ArrayCollection(arr);
             }
@@ -72,8 +84,8 @@
 
         private function loadSubject():void {
             var o:Object = {};//如果需要补齐查询参数
-            o["kind"] = "";
-            var url:String = o["kind"] || o["kind"] == "" ? "/tax/getSubjectAll" : "/tax/getSubjectByKind";
+            o["all"] = "all";
+            var url:String =  "/tax/getSubjectAll";
             HttpServiceUtil.getCHTTPServiceAndResult(url, loadSubDataResult, "POST").send(o);
         }
 
@@ -91,10 +103,24 @@
 
         private function filterSubjectTitle(item:Object):Boolean {
 
-            if (searchInput.text || item.title.indexOf(searchInput.text))
-                return true;
-            else
-                return false;
+            if(!kjkmKindList.selectedItem){
+                if(item.type==2){
+                    return false;
+                }else{
+                    if(!searchInput.text || (searchInput.text&&(item.title.indexOf(searchInput.text)>=0|| (item.flag&&item.flag.indexOf(searchInput.text)>=0)))){
+                        return true;
+                    }
+                    return false;
+                }
+            }else{
+                    if(item.type==2&&item.kmkind!=kjkmKindList.selectedItem.id){
+                        return false;
+                    }
+                    if(!searchInput.text || (searchInput.text&&(item.title.indexOf(searchInput.text)>=0|| (item.flag&&item.flag.indexOf(searchInput.text)>=0)))){
+                        return true;
+                    }
+                    return false;
+            }
 
         }
 
@@ -153,7 +179,7 @@
                     return;
                 }
                 tempPaper.right_ztdm=result.result;
-                ztdm.text = tempPaper.right_ztdm;
+//                ztdm.text = tempPaper.right_ztdm;
 
                 Alert.show("创建标准账套成功,是否去设置正确答案？","提示", Alert.YES | Alert.NO, null, function (e:mx.events.CloseEvent):void {
                     if (e.detail == Alert.YES) {
@@ -179,7 +205,8 @@
         private function resetFormData():void {
             title.text = "";
             content.text = "";
-            ztdm.text = "";
+            kjkmKindList.selectedItem=null;
+            flagInput.text = "";
             paper_time.value= 5;
             paperSubjectArr.removeAll();
             tempPaper = null;
@@ -197,9 +224,13 @@
                 o['id'] = ''
             }
             o["title"] = title.text;
+            o["flag"] = flagInput.text;
             o["content"] = content.text;
             o["is_pub"] = is_pub.selected;
-            o["right_ztdm"] = ztdm.text;
+            if(kjkmKindList.selectedItem){
+                o["kmkind"] = kjkmKindList.selectedItem.id;
+            }
+
             o['time'] = paper_time.value;
             if(guanComboBox.selectedItem){
                 o["guan"]=guanComboBox.selectedItem.id;
@@ -211,10 +242,17 @@
 
         private function setFormData(o:Object):void {
             title.text = o["title"];
+            flagInput.text = o["flag"];
             content.text = o["content"];
             paper_time.value = o['time'];
             is_pub.selected = o["is_pub"];
-            ztdm.text = o["right_ztdm"];
+            kjkmKindList.selectedItem=null;
+            for each(var k:Object in kindList){
+                if(k.id== o["kmkind"]){
+                    kjkmKindList.selectedItem = k;
+                }
+            }
+//            ztdm.text = o["kmkind"];
             if(o["guan_id"]){
                 for each(var obj:Object in ToolUtil.guanList){
                     if(obj["id"]==o["guan_id"]){
@@ -232,6 +270,10 @@
             var o:Object = getFormData();
             if (o["title"] == "") {
                 Alert.show("题目不能为空", "提示");
+                return false;
+            }
+            if (!o["kmkind"]) {
+                Alert.show("请选择会计科目分类", "提示");
                 return false;
             }
 
@@ -311,6 +353,10 @@
             loadSubject();
             loadPaper();
 
+            pagebar1.addEventListener(PageChangeEvent.PageChange_EventStr,loadPaper);
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKind", function(result:Object,e:ResultEvent):void{
+                kindList = new ArrayCollection(result.result.result as Array);
+            }, "POST").send();
         }
 
         override public function closeContainer(e:CloseEvent):void {
@@ -326,7 +372,7 @@
         }
 
         private function pubShow(item:Object, column:GridColumn):String {
-            if (item.type) {
+            if (item.is_pub) {
                 return "发布";
             } else {
                 return "未发布";
@@ -352,7 +398,10 @@
                 </s:HorizontalLayout>
             </s:layout>
             <s:HGroup height="20">
-
+                <s:Label text="关键字" height="100%" verticalAlign="middle">
+                </s:Label>
+                <s:TextInput id="kindKey" height="100%">
+                </s:TextInput>
             </s:HGroup>
             <mx:ButtonBar id="ba1" dataProvider="{buttonArr1}" selectedIndex="0" doubleClickEnabled="true"
                           chromeColor="#faf0cc" labelField="label" iconField="ico" height="30"
@@ -394,6 +443,10 @@
                             <s:TextInput id="title" width="100%" prompt="标题">
                             </s:TextInput>
                         </s:FormItem>
+                        <s:FormItem label="标记:"  width="80%" >
+                            <s:TextInput id="flagInput" width="100%" prompt="管理员参考" >
+                            </s:TextInput>
+                        </s:FormItem>
                         <s:FormItem label="试卷介绍:" width="80%" height="150">
                             <s:TextArea id="content" height="150" width="100%" prompt="试卷介绍">
                             </s:TextArea>
@@ -410,8 +463,8 @@
                         <s:FormItem label="是否发布:" width="80%">
                             <s:CheckBox id="is_pub" label="是否发布" selected="true"></s:CheckBox>
                         </s:FormItem>
-                        <s:FormItem label="标准账套:" width="80%">
-                            <s:TextInput  id="ztdm" enabled="false"></s:TextInput>
+                        <s:FormItem label="会计科目分类:" width="80%">
+                            <s:DropDownList id="kjkmKindList" dataProvider="{kindList}" change="{allSubjectArr.refresh()}" labelField="name" width="200" ></s:DropDownList>
                         </s:FormItem>
                         <mx:ControlBar>
                             <s:Button id="savBtn" label="保存" color="white" chromeColor="red" height="25"
@@ -419,10 +472,10 @@
                             </s:Button>
                             <s:Button id="delBtn" label="删除" height="25" enabled="false" click="delPaper();">
                             </s:Button>
-                            <s:Button id="ztdmButton" label="重置标准答案账套" height="25" enabled="{delBtn.enabled}" click="doRightPaper();">
-                            </s:Button>
-                            <s:Button  label="进入帐套" height="25" enabled="{delBtn.enabled}" click="gotoURL();">
-                            </s:Button>
+                            <!--<s:Button id="ztdmButton" label="重置标准答案账套" height="25" enabled="{delBtn.enabled}" click="doRightPaper();">-->
+                            <!--</s:Button>-->
+                            <!--<s:Button  label="进入帐套" height="25" enabled="{delBtn.enabled}" click="gotoURL();">-->
+                            <!--</s:Button>-->
 
                         </mx:ControlBar>
                         <s:FormItem width="80%" id="content3" label="试题:">
@@ -435,6 +488,9 @@
                                 <s:columns>
                                     <s:ArrayList>
                                         <s:GridColumn headerText="题目" dataField="title" dataTipField="title">
+
+                                        </s:GridColumn>
+                                        <s:GridColumn headerText="标记" dataField="flag" dataTipField="flag">
 
                                         </s:GridColumn>
                                         <s:GridColumn headerText="类型" dataField="type" width="90" sortable="false"
@@ -454,6 +510,9 @@
                                     <s:columns>
                                         <s:ArrayList>
                                             <s:GridColumn headerText="题目" dataField="title" dataTipField="title">
+
+                                            </s:GridColumn>
+                                            <s:GridColumn headerText="标记" dataField="flag" dataTipField="flag">
 
                                             </s:GridColumn>
                                             <s:GridColumn headerText="类型" dataField="type" width="90" sortable="false"

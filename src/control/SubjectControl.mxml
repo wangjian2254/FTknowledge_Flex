@@ -7,8 +7,11 @@
 		<![CDATA[
         import events.AutoGridEvent;
         import events.CloseEvent;
+        import events.PageChangeEvent;
 
         import httpcontrol.HttpServiceUtil;
+
+        import json.JParser;
 
         import mx.collections.ArrayCollection;
         import mx.controls.Alert;
@@ -22,6 +25,8 @@
         private var taxlist:ArrayCollection = new ArrayCollection();
         [Bindable]
         private var rulelist:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var kindList:ArrayCollection = new ArrayCollection();
 
 
         private function getTemplateList():void {
@@ -104,10 +109,11 @@
 
         private var isPaging:Boolean;
 
-        private function loadSubject():void {
+        private function loadSubject(e:PageChangeEvent=null):void {
             var o:Object = {};//如果需要补齐查询参数
             o["kind"] = kindKey.text;
-            var url:String = o["kind"] || o["kind"] == "" ? "/tax/getSubjectAll" : "/tax/getSubjectByKind";
+            o['start']=pagebar1.PageIndex*pagebar1.mPageSize;
+            var url:String = !o["kind"] || o["kind"] == "" ? "/tax/getSubjectAll" : "/tax/getSubjectByKind";
             isPaging = !o["kind"] || o["kind"] == "" ? true : false;
             HttpServiceUtil.getCHTTPServiceAndResult(url, loadSubDataResult, "POST").send(o);
         }
@@ -117,14 +123,17 @@
 //					resetFormData();
                 delBtn.enabled = false;
                 var arr:Array;
-                if (isPaging) {
+//                if (isPaging) {
                     pagebar1.mPageSize = result.result.limit;
                     pagebar1.RecordCount = result.result.total;
-                    pagebar1.initPage();
+                    if(subjectArr.length==0){
+                        pagebar1.initPage();
+                    }
+
                     arr = result.result.result is Array ? result.result.result : [];
-                } else {
-                    arr = result.result.result is Array ? result.result.result : [];
-                }
+//                } else {
+//                    arr = result.result.result is Array ? result.result.result : [];
+//                }
                 subjectArr.removeAll();
                 subjectArr.addAll(new ArrayCollection(arr));
             }
@@ -144,7 +153,7 @@
         private function savSubjectDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
                 loadSubject();
-                tempSubject['id'] = result.result;
+                tempSubject['id'] = result.result.subjectid;
 
                 var data:Object = {};
                 data["sid"] = tempSubject["id"];
@@ -195,7 +204,9 @@
             } else {
                 optionGrid.dataProvider.removeAll();
             }
+            pzEdit.fllist.removeAll();
             bz.text = "";
+            flagInput.text = "";
             taxtemplateRule.selectedItem = null;
 
             imgTax.source = null;
@@ -214,9 +225,18 @@
             }
 
             o["title"] = title.text;
+            o["flag"] = flagInput.text;
             o["type"] = typeRaido.selectedValue;
             if (taxtemplateRule.selectedItem) {
                 o["rule"] = taxtemplateRule.selectedItem.id;
+                if(kjkmKindList.selectedItem){
+                    o["kmkind"] = kjkmKindList.selectedItem.id;
+                    o["pzid"]=pzEdit.pzid;
+                    o["pzdesc"]=pzEdit.desc.text;
+                    o["pzfl"]=JParser.encode(pzEdit.getAllFl());
+
+                }
+
             } else {
                 o["rule"] = "";
             }
@@ -232,7 +252,33 @@
         private function setFormData(o:Object):void {
             title.text = o["title"];
             bz.text = o["bz"];
+            flagInput.text = o["flag"];
             typeRaido.selectedValue = o['type'];
+            showType();
+            if(typeRaido.selectedValue==2){
+                var parm:Object = new Object();
+                parm["subjectid"]=o["id"];
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getPZ", function(result:Object,e:ResultEvent):void{
+                    var f:Boolean = true;
+                    for each(var k:Object in kindList){
+                        if(k.id==result.result.kindid){
+                            kjkmKindList.selectedItem = k;
+                            pzEdit.kjkmkind =k;
+                            pzEdit.pzid = result.result.pzid;
+                            pzEdit.desc.text=result.result.pzdesc;
+                            pzEdit.fllist = new ArrayCollection(result.result.fllist as Array);
+                            f=false;
+                        }
+                    }
+                    if(f){
+                        pzEdit.pzid =null;
+                        pzEdit.desc.text="";
+                        pzEdit.fllist = new ArrayCollection();
+                    }
+
+                }, "POST").send(parm);
+            }
+
 //				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
 //				dp.removeAll();
 //				var optiosArr:Array= o["options"] is Array?o["options"]:[];
@@ -250,6 +296,23 @@
             if (typeRaido.selectedValue == 1 && optionGrid.dataProvider.length <= 1) {
                 Alert.show("选项不能为空", "提示");
                 return false;
+            }
+            if(typeRaido.selectedValue==2&&(!o["rule"]||!o["kmkind"])){
+                Alert.show("分录不能为空", "提示");
+                return false;
+            }
+            if(typeRaido.selectedValue==2){
+                for each(var fl:Object in pzEdit.getAllFl()){
+                    if(fl.fx&&isNaN(fl.jje)){
+                        Alert.show("第"+(pzEdit.getAllFl().getItemIndex(fl)+1)+"条分录，借方金额不正确", "提示");
+                        return false;
+                    }
+                    if(!fl.fx&&isNaN(fl.dje)){
+                        Alert.show("第"+(pzEdit.getAllFl().getItemIndex(fl)+1)+"条分录，贷方金额不正确", "提示");
+                        return false;
+                    }
+                }
+
             }
             var arr:Array = optionGrid.dataProvider.toArray();
             for (var i:int; i < (arr.length - 2); i++) {
@@ -306,11 +369,17 @@
             }
         }
 
+
         override public function init(e:FlexEvent):void {
             optionGrid.dataProvider = new ArrayCollection();
             loadSubject();
             getTemplateList();
             showType();
+            pagebar1.addEventListener(PageChangeEvent.PageChange_EventStr,loadSubject);
+
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKind", function(result:Object,e:ResultEvent):void{
+                kindList = new ArrayCollection(result.result.result as Array);
+            }, "POST").send();
         }
 
 
@@ -335,12 +404,15 @@
             if (typeRaido.selectedValue == 2) {
                 content3.visible = false;
                 content3.height = 0;
-
+                content4.visible = true;
+                content4.height = 250;
 
             }
             if (typeRaido.selectedValue == 1) {
                 content3.visible = true;
                 content3.height = 150;
+                content4.visible = false;
+                content4.height=0;
             }
             formSubject.invalidateSize();
         }
@@ -390,12 +462,12 @@
                 </s:HorizontalLayout>
             </s:layout>
             <s:VGroup height="100%" width="430">
-                <s:DataGrid id="subjectGrid" height="100%" width="100%" dataProvider="{subjectArr}"
+                <s:DataGrid id="subjectGrid" height="100%" width="100%" dataProvider="{subjectArr}" showDataTips="true"
                              selectionChange="seletSubjec();">
 
                     <s:columns>
                         <s:ArrayList>
-                            <s:GridColumn headerText="题目" dataField="title" dataTipField="title" >
+                            <s:GridColumn headerText="题目" dataField="title" dataTipField="title"  >
 
                             </s:GridColumn>
                             <s:GridColumn headerText="类型" width="80" dataField="is_pub" labelFunction="typeShow">
@@ -414,6 +486,10 @@
                         <s:FormItem label="题目:" height="120" width="80%" id="content1">
                             <s:TextArea id="title" width="100%" prompt="题目内容" height="120">
                             </s:TextArea>
+                        </s:FormItem>
+                        <s:FormItem label="标记:"  width="80%" >
+                            <s:TextInput id="flagInput" width="100%" prompt="管理员参考">
+                            </s:TextInput>
                         </s:FormItem>
                         <s:FormItem width="80%" label="类型:">
                             <s:layout>
@@ -459,6 +535,16 @@
                                     </mx:DataGridColumn>
                                 </uicontrol:columns>
                             </uicontrol:AutoGrid>
+                        </s:FormItem>
+
+                        <s:FormItem width="80%" id="content4" label="凭证" height="350" textAlign="left">
+                            <s:layout>
+                                <s:VerticalLayout gap="5"></s:VerticalLayout>
+                            </s:layout>
+                            <s:DropDownList id="kjkmKindList" dataProvider="{kindList}" labelField="name" width="200" change="{pzEdit.kjkmkind=kjkmKindList.selectedItem}"></s:DropDownList>
+                            <uicontrol:PZEdit id="pzEdit" width="100%" height="220">
+
+                            </uicontrol:PZEdit>
                         </s:FormItem>
                         <s:FormItem width="80%" label="票据:" height="250">
                             <s:layout>

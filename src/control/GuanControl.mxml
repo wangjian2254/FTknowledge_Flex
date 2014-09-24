@@ -49,6 +49,7 @@
 
         private function loadGuan():void {
             var o:Object = {};//如果需要补齐查询参数
+            o['all']='all';
             HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllGuan", loadGuanDataResult, "POST").send(o);
         }
 
@@ -249,7 +250,7 @@
         }
 
         private function pubShow(item:Object, column:GridColumn):String {
-            if (item.type) {
+            if (item.is_pub) {
                 return "发布";
             } else {
                 return "未发布";
@@ -345,6 +346,9 @@
                                         <s:GridColumn headerText="试卷" dataField="title" dataTipField="title" >
 
                                         </s:GridColumn>
+                                        <s:GridColumn headerText="标记" dataField="flag" dataTipField="flag">
+
+                                        </s:GridColumn>
                                         <s:GridColumn headerText="是否发布" width="80" dataField="is_pub" labelFunction="pubShow">
 
                                         </s:GridColumn>
@@ -363,6 +367,9 @@
 
                                             </s:GridColumn>
                                             <s:GridColumn headerText="关卡" dataField="guan_id" labelFunction="ToolUtil.lblShowGuan">
+
+                                            </s:GridColumn>
+                                            <s:GridColumn headerText="标记" dataField="flag" dataTipField="flag">
 
                                             </s:GridColumn>
 

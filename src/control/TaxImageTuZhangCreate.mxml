@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                          xmlns:s="library://ns.adobe.com/flex/spark"
+                          xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*"
+                          xmlns:uicontrol="uicontrol.*"
+                          width="700" height="500" borderVisible="false" backgroundAlpha="0" top="5" bottom="5" left="5"
+                          right="5">
+    <fx:Script>
+		<![CDATA[
+        import events.CloseEvent;
+
+        import httpcontrol.HttpServiceUtil;
+
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.core.FlexGlobals;
+        import mx.events.DataGridEvent;
+        import mx.events.FlexEvent;
+        import mx.events.ItemClickEvent;
+        import mx.managers.PopUpManager;
+        import mx.rpc.events.ResultEvent;
+
+        import spark.components.TitleWindow;
+
+        import uicontrol.BigImage;
+
+        import uicontrol.Confirm;
+        import uicontrol.RuleConfirm;
+
+        [Bindable]
+        private var taxlist:ArrayCollection = new ArrayCollection();
+
+        override public function init(e:FlexEvent):void {
+            getTemplateList();
+
+
+        }
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+
+        }
+
+        private function getTemplateList():void {
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTuZhangList", getTemplateDataResult, "POST").send();
+        }
+
+        private function getTemplateDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                taxlist.removeAll();
+                taxlist.addAll(new ArrayCollection(result.result as Array));
+            }
+        }
+
+        private var tempItem:Object = null;
+
+        private function selectTemplate():void {
+            if (taxtemplateGrid.selectedItem != tempItem) {
+                tempItem = taxtemplateGrid.selectedItem;
+                taxImg.source = tempItem.imgurl;
+            }
+        }
+
+
+        private function createTemplate():void {
+            var templateCreater:Confirm = Confirm(PopUpManager.createPopUp(
+                    this, Confirm, true) as TitleWindow);
+            templateCreater.grid = taxtemplateGrid;
+            templateCreater.url = "/tax/taxTuZhangUploaded";
+            templateCreater.x = (this.width - templateCreater.width) / 2;
+            templateCreater.y = (this.height - templateCreater.height) / 2;
+        }
+
+        private function updateTemplate():void {
+            if(taxtemplateGrid.selectedItem==null){
+                Alert.show("请选择模板","提示")
+                return;
+            }
+            var templateCreater:Confirm = Confirm(PopUpManager.createPopUp(
+                    this, Confirm, true) as TitleWindow);
+            templateCreater.grid = taxtemplateGrid;
+            templateCreater.url = "/tax/taxTuZhangUploaded";
+            templateCreater.templateobj = taxtemplateGrid.selectedItem;
+            templateCreater.x = (this.width - templateCreater.width) / 2;
+            templateCreater.y = (this.height - templateCreater.height) / 2;
+        }
+
+        private function deleteTemplate():void{
+            if(taxtemplateGrid.selectedItem==null){
+                Alert.show("请选择一个模板","提示");
+                return ;
+            }
+            var data:Object = new Object();
+            data["templateid"] = taxtemplateGrid.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteTemplate", function(result:Object,e:ResultEvent):void{
+                getTemplateList();
+            }, "POST").send(data);
+        }
+
+
+        private function bigImage(event:MouseEvent):void {
+            if (event.currentTarget is Image) {
+                var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigImage, true) as BigImage;
+                s.imgurl = event.currentTarget.source;
+            }
+
+
+        }
+        ]]>
+	</fx:Script>
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+        <!--  allowMultipleSelection="true"  -->
+    </fx:Declarations>
+    <s:HGroup gap="5" width="100%" height="100%">
+        <s:VGroup gap="4" width="250" height="100%" paddingTop="5" paddingLeft="5">
+            <s:HGroup gap="10" width="100%">
+                <s:Button label="添加" chromeColor="red" color="#ffffff" click="createTemplate()" height="30"></s:Button>
+                <s:Button label="修改" click="updateTemplate()" height="30"></s:Button>
+                <s:Button label="删除" click="deleteTemplate()" height="30"></s:Button>
+            </s:HGroup>
+            <mx:DataGrid width="100%" height="100%" id="taxtemplateGrid" doubleClickEnabled="true"
+                         itemClick="selectTemplate()"
+                        dataProvider="{taxlist}">
+                <mx:columns>
+                    <mx:DataGridColumn headerText="图章模板" dataField="name" editable="true"
+                                       sortable="false"></mx:DataGridColumn>
+                </mx:columns>
+            </mx:DataGrid>
+        </s:VGroup>
+
+        <s:VGroup width="100%" height="100%">
+            <s:Image id="taxImg" x="0" y="0" height="100%" click="bigImage(event)"></s:Image>
+        </s:VGroup>
+    </s:HGroup>
+</control:CBorderContainer>

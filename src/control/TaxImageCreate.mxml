@@ -27,6 +27,8 @@
         import uicontrol.Confirm;
         import uicontrol.RuleConfirm;
 
+        import util.ToolUtil;
+
         [Bindable]
         private var taxlist:ArrayCollection = new ArrayCollection();
         [Bindable]
@@ -92,6 +94,31 @@
             templateCreater.y = (this.height - templateCreater.height) / 2;
         }
 
+        private function updateTemplate():void {
+            if(taxtemplateGrid.selectedItem==null){
+                Alert.show("请选择模板","提示")
+                return;
+            }
+            var templateCreater:Confirm = Confirm(PopUpManager.createPopUp(
+                    this, Confirm, true) as TitleWindow);
+            templateCreater.grid = taxtemplateGrid;
+            templateCreater.templateobj = taxtemplateGrid.selectedItem;
+            templateCreater.x = (this.width - templateCreater.width) / 2;
+            templateCreater.y = (this.height - templateCreater.height) / 2;
+        }
+
+        private function deleteTemplate():void{
+            if(taxtemplateGrid.selectedItem==null){
+                Alert.show("请选择一个模板","提示");
+                return ;
+            }
+            var data:Object = new Object();
+            data["templateid"] = taxtemplateGrid.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteTemplate", function(result:Object,e:ResultEvent):void{
+                getTemplateList();
+            }, "POST").send(data);
+        }
+
         private function createRule():void {
             if (!taxtemplateGrid.selectedItem) {
                 Alert.show("请选择一个票据模板", "提示");
@@ -103,6 +130,19 @@
             templateCreater.grid = taxtemplateRule;
             templateCreater.x = (this.width - templateCreater.width) / 2;
             templateCreater.y = (this.height - templateCreater.height) / 2;
+        }
+
+        private  function  deleteRule():void{
+            if (!taxtemplateRule.selectedItem) {
+                Alert.show("请选择一个规则", "提示");
+                return;
+            }
+            var data:Object = new Object();
+            data["ruleid"] = taxtemplateRule.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteRule", function(result:Object,e:ResultEvent):void{
+                tempItem=null;
+                selectTemplate();
+            }, "POST").send(data);
         }
 
         private var ruleItem:Object = null;
@@ -229,7 +269,12 @@
                         ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
                         continue;
                     }
-                    if (!obj.x || !obj.y || !obj.size || !obj.family || obj.word==='') {
+                    if(obj.tuzhang){
+                        if(!obj.x || !obj.y ){
+                            Alert.show("使用图章需设定x、y值", "警告");
+                            return;
+                        }
+                    }else if(!obj.x || !obj.y || !obj.size || !obj.family || obj.word==='') {
                         Alert.show("请填写必要参数", "警告");
                         return;
                     }
@@ -244,10 +289,7 @@
                         ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
                         continue;
                     }
-                    if (!obj.x || !obj.y || !obj.size || !obj.family || obj.word==='') {
-                        Alert.show("请填写必要参数", "警告");
-                        return;
-                    }
+
                     data["index" + i] = obj.index;
                     data["x" + i] = obj.x;
                     data["y" + i] = obj.y;
@@ -258,6 +300,8 @@
                     data["color" + i] = Number(obj.color);
                     data["family" + i] = obj.family;
                     data["word" + i] = obj.word;
+                    data["tuzhang" + i] = obj.tuzhang;
+
                 }
                 data['num'] = ruleItemList.length;
                 HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRuleItem", saveRuleItemResult, "POST").send(data);
@@ -294,6 +338,15 @@
             return "";
         }
 
+        public function tuzhangFun(item:Object, column:AdvancedDataGridColumn):String {
+            for each(var obj:Object in ToolUtil.tuzhangList) {
+                if (obj.id == item.tuzhang) {
+                    return obj.name;
+                }
+            }
+            return "";
+        }
+
         private function bigImage(event:MouseEvent):void {
             if (event.currentTarget is Image) {
                 var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigImage, true) as BigImage;
@@ -311,11 +364,12 @@
     <s:HGroup gap="5" width="100%" height="100%">
         <s:VGroup gap="4" width="250" height="100%" paddingTop="5" paddingLeft="5">
             <s:HGroup gap="10" width="100%">
-                <s:Button label="添加新模板" click="createTemplate()" height="30"></s:Button>
-                <s:CheckBox label="表格内编辑修改" selected="false" id="boxEditTemp"></s:CheckBox>
+                <s:Button label="添加" chromeColor="red" color="#ffffff" click="createTemplate()" height="30"></s:Button>
+                <s:Button label="修改" click="updateTemplate()" height="30"></s:Button>
+                <s:Button label="删除" click="deleteTemplate()" height="30"></s:Button>
             </s:HGroup>
             <mx:DataGrid width="100%" height="100%" id="taxtemplateGrid" doubleClickEnabled="true"
-                         itemClick="selectTemplate()" editable="{boxEditTemp.selected}"
+                         itemClick="selectTemplate()" editable="false"
                          itemEditEnd="templateUpdate(event)" dataProvider="{taxlist}">
                 <mx:columns>
                     <mx:DataGridColumn headerText="票据模板" dataField="name" editable="true"
@@ -323,8 +377,9 @@
                 </mx:columns>
             </mx:DataGrid>
             <s:HGroup gap="10" width="100%">
-                <s:Button label="添加新规则" click="createRule()" height="30"></s:Button>
-                <s:CheckBox label="表格内编辑修改" selected="false" id="boxEditRule"></s:CheckBox>
+                <s:Button label="添加"  chromeColor="red" color="#ffffff" click="createRule()" height="30"></s:Button>
+                <s:Button label="删除" click="deleteRule()" height="30"></s:Button>
+                <s:CheckBox label="编辑修改" selected="false" id="boxEditRule"></s:CheckBox>
             </s:HGroup>
 
             <mx:DataGrid width="100%" height="300" id="taxtemplateRule" doubleClickEnabled="true"
@@ -340,8 +395,8 @@
             <s:Image id="taxImg" x="0" y="0" height="100%" click="bigImage(event)"></s:Image>
 
             <s:HGroup width="100%" height="30" gap="20">
+                <s:Spacer width="20"></s:Spacer>
                 <mx:ButtonBar dataProvider="{btnlist}" iconField="ico" height="30" itemClick="clickHander(event)">
-
                 </mx:ButtonBar>
                 <s:CheckBox id="showZB"  label="显示坐标" selected="true" ></s:CheckBox>
             </s:HGroup>
@@ -349,7 +404,7 @@
             <s:Scroller width="100%" height="300">
                 <s:Group width="100%" height="100%">
                     <uicontrol:MarkAdvancedDataGrid id="ruleitemgrid" dataProvider="{ruleItemList}" isNewAdd="true"
-                                                    enabled="true" editable="true" minWidth="1000" height="100%">
+                                                    enabled="true" editable="true" minWidth="1100" height="100%">
                         <uicontrol:groupedColumns>
                             <mx:AdvancedDataGridColumn headerText="选择" dataField="selected" sortable="false" width="60"
                                                        editorDataField="selected" rendererIsEditor="true">
@@ -498,6 +553,95 @@
                                         </mx:HBox>
                                     </fx:Component>
                                 </mx:itemRenderer>
+                            </mx:AdvancedDataGridColumn>
+                            <mx:AdvancedDataGridColumn headerText="图章" dataField="tuzhang" editorDataField="data"
+                                                       width="100" labelFunction="tuzhangFun">
+                                <mx:itemEditor>
+                                    <fx:Component>
+                                        <mx:HBox
+                                                implements="mx.controls.listClasses.IDropInListItemRenderer,mx.managers.IFocusManagerComponent">
+                                            <fx:Script>
+								<![CDATA[
+                                                    import mx.collections.ArrayCollection;
+                                                    import mx.controls.dataGridClasses.DataGridListData;
+                                                    import mx.controls.listClasses.BaseListData;
+
+                                                    import util.ToolUtil;
+
+                                                    private var _listData:DataGridListData;
+                                                    // Define a property for returning the new value to the cell.
+                                                    [Bindable]
+                                                    private var _value:Object;
+
+                                                    [Bindable]
+                                                    private var list:ArrayCollection = new ArrayCollection();
+
+                                                    // Implement the drawFocus() method for the VBox.
+                                                    override public function drawFocus(draw:Boolean):void {
+                                                        tuzhang.setFocus();
+                                                        tuzhang.open();
+
+                                                    }
+
+
+                                                    override public function get data():Object {
+                                                        if (tuzhang == null) {
+                                                            return super.data;
+                                                        } else {
+                                                            if (tuzhang.selectedIndex == -1) {
+                                                                for each(var it:Object in tuzhang.dataProvider) {
+                                                                    if (it[tuzhang.labelField] == tuzhang.data || it[tuzhang.valueField] == tuzhang.data) {
+                                                                        return it[tuzhang.valueField]
+                                                                    }
+                                                                }
+                                                                return null;
+                                                            }
+                                                            return tuzhang.data;
+                                                        }
+                                                    }
+
+                                                    override public function set data(value:Object):void {
+                                                        super.data = value[_listData.dataField];
+                                                        _value = value;
+                                                        changeFilterValue();
+                                                        tuzhang.setValue(value[_listData.dataField]);
+
+                                                        //
+                                                        //													changeFilterValue();
+                                                    }
+
+                                                    public function get listData():BaseListData {
+                                                        return _listData;
+                                                    }
+
+                                                    public function set listData(value:BaseListData):void {
+                                                        _listData = DataGridListData(value);
+                                                        tuzhang.listData = DataGridListData(value);
+                                                    }
+
+                                                    public function changeCode():void {
+                                                        if (tuzhang.selectedItem == null) {
+                                                            return;
+                                                        }
+
+                                                    }
+
+                                                    public function changeFilterValue():void {
+                                                        if (tuzhang.filtervalue != _value.tuzhang) {
+                                                            tuzhang.filtervalue = _value.tuzhang;
+                                                        }
+                                                    }
+                                                    ]]>
+										</fx:Script>
+                                            <uicontrol:FliterComboBox id="tuzhang" dataProvider="{ToolUtil.tuzhangList}"
+                                                                      labelField="name" valueField="id"
+                                                                      height="{this.height}" width="{this.width}"
+                                                                      styleName="fliterComboBox" dropdownWidth="200">
+
+                                            </uicontrol:FliterComboBox>
+                                        </mx:HBox>
+                                    </fx:Component>
+                                </mx:itemEditor>
                             </mx:AdvancedDataGridColumn>
                         </uicontrol:groupedColumns>
 

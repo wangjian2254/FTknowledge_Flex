@@ -34,10 +34,17 @@
         private var loader:Loader = new Loader();
         public var bar:CProgressBar = null;
 
+        private var _kjkmkind:Object;
+
+        [Bindable]
+        public var kjkm:ArrayCollection = new ArrayCollection();
+
+
+
         private function addFl():void {
             var data:Object = new Object();
             data["kjkm"] = "";
-            data["fx"] = false;
+            data["fx"] = true;
             fllist.addItem(data);
             var v:Object = new Object();
             v.columnIndex = 0;
@@ -61,12 +68,6 @@
 
 
         public function showFl():void {
-            if (!pzid) {
-                return;
-            }
-            var data:Object = new Object();
-            data["pzid"] = pzid;
-            HttpServiceUtil.getCHTTPServiceAndResult("/ft/getPZ", showPZResult, "POST").send(data);
             if (editenable) {
                 btnpanel.visible = true;
                 btnpanel.height = 30;
@@ -74,6 +75,21 @@
                 btnpanel.visible = false;
                 btnpanel.height = 0;
             }
+            if (pzid) {
+                kjkm = ToolUtil.kjkmList;
+                var data:Object = new Object();
+                data["pzid"] = pzid;
+                HttpServiceUtil.getCHTTPServiceAndResult("/ft/getPZ", showPZResult, "POST").send(data);
+
+
+            }else if(kjkmkind){
+                var data:Object = new Object();
+                data["kind"] = kjkmkind.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKMLabelByKind", getAllKMByKindResult, "POST").send(data);
+
+
+            }
+
 
         }
 
@@ -95,6 +111,10 @@
                 dhj.text = dhjn.toFixed(2);
 
             }
+        }
+
+        public function getAllKMByKindResult(result:Object,e:ResultEvent):void{
+            kjkm = new ArrayCollection(result.result.result as Array);
         }
 
         public function uploadData():void {
@@ -126,9 +146,12 @@
         }
 
         public function kjkmlbl(item:Object, column:DataGridColumn):String {
-            for each(var obj:Object in ToolUtil.kmList) {
+            for each(var obj:Object in kjkm) {
                 if (item.kjkm == obj.id) {
-                    return obj.name;
+
+                        return obj.name;
+
+
                 }
             }
             return "";
@@ -143,6 +166,28 @@
             }
             return "";
         }
+
+        public function get kjkmkind():Object {
+            return _kjkmkind;
+        }
+
+        public function set kjkmkind(value:Object):void {
+            _kjkmkind = value;
+            if(kjkmkind){
+                var data:Object = new Object();
+                data["kind"] = kjkmkind.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKMLabelByKind", getAllKMByKindResult, "POST").send(data);
+            }else{
+                kjkm.removeAll();
+            }
+
+
+        }
+
+        public function getAllFl():ArrayCollection{
+            return fllist;
+        }
+
         ]]>
 	</fx:Script>
     <fx:Declarations>
@@ -248,10 +293,10 @@
                                 }
                                 ]]>
 							</fx:Script>
-                            <uicontrol:FliterComboBox id="cbo" dataProvider="{ToolUtil.kmList}" labelField="name"
+                            <uicontrol:FliterComboBox id="cbo" dataProvider="{outerDocument.kjkm}" labelField="name"
                                                       valueField="id" change="changeCode()" height="{this.height}"
                                                       width="{this.width}" styleName="fliterComboBox"
-                                                      dropdownWidth="200">
+                                                      dropdownWidth="{this.width}">
 
                             </uicontrol:FliterComboBox>
                         </mx:HBox>
@@ -283,17 +328,17 @@
 
                                 // Implement the drawFocus() method for the VBox.
                                 override public function drawFocus(draw:Boolean):void {
-                                    cbo.setFocus();
-                                    cbo.open();
+                                    cbo2.setFocus();
+                                    cbo2.open();
 
                                 }
 
 
                                 override public function get data():Object {
-                                    if (cbo == null) {
+                                    if (cbo2 == null) {
                                         return super.data;
                                     } else {
-                                        if (cbo.selectedIndex == -1) {
+                                        if (cbo2.selectedIndex == -1) {
 //												for each(var it:Object in cbo.dataProvider){
 //													if(it[cbo.labelField]==cbo.data||it[cbo.valueField]==cbo.data){
 //														return it[cbo.valueField]
@@ -301,7 +346,7 @@
 //												}
                                             return "";
                                         }
-                                        return cbo.data;
+                                        return cbo2.data;
                                     }
                                 }
 
@@ -309,7 +354,7 @@
                                     super.data = value[_listData.dataField];
                                     _value = value;
                                     changeFilterValue();
-                                    cbo.setValue(value[_listData.dataField]);
+                                    cbo2.setValue(value[_listData.dataField]);
 
                                     //
                                     //													changeFilterValue();
@@ -321,24 +366,24 @@
 
                                 public function set listData(value:BaseListData):void {
                                     _listData = DataGridListData(value);
-                                    cbo.listData = DataGridListData(value);
+                                    cbo2.listData = DataGridListData(value);
                                 }
 
                                 public function changeCode():void {
-                                    if (cbo.selectedItem == null) {
+                                    if (cbo2.selectedItem == null) {
                                         return;
                                     }
 
                                 }
 
                                 public function changeFilterValue():void {
-                                    if (cbo.filtervalue != _value.code) {
-                                        cbo.filtervalue = _value.code;
+                                    if (cbo2.filtervalue != _value.code) {
+                                        cbo2.filtervalue = _value.code;
                                     }
                                 }
                                 ]]>
 							</fx:Script>
-                            <uicontrol:FliterComboBox id="cbo" dataProvider="{list}" labelField="name" valueField="id"
+                            <uicontrol:FliterComboBox id="cbo2" dataProvider="{list}" labelField="name" valueField="id"
                                                       change="changeCode()" height="{this.height}" width="{this.width}"
                                                       styleName="fliterComboBox" dropdownWidth="200">
 

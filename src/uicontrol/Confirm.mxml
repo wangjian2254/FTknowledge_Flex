@@ -21,15 +21,21 @@
 
         public var grid:DataGrid;
 
+        public var url:String="/tax/taxTemplateUploaded";
         private var file:FileReference;
         private var byteArray:ByteArray;
         private var bitmapData:BitmapData;
         private var loader:Loader = new Loader();
 
+        public var templateobj=null;
         private function init():void {
             file = new FileReference();
             file.addEventListener(Event.SELECT, fileReferenceSelectHandler);
             file.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, uploadImageResult);
+            if(templateobj!=null){
+                taxNo.text = templateobj.name;
+                img.source = templateobj.imgurl;
+            }
         }
 
         private function sendTax():void {
@@ -94,9 +100,15 @@
 
             //进度监听
             file.addEventListener(ProgressEvent.PROGRESS, onProgress);
-            var request:URLRequest = new URLRequest("/tax/taxTemplateUploaded?name=" + taxNo.text);
+            var request:URLRequest = new URLRequest(url);
             request.method = URLRequestMethod.POST;
+            var data:URLVariables = new URLVariables();//传过去的data
+            if(templateobj!=null){
+                data['id'] = templateobj.id;
+            }
 
+            data['name'] = taxNo.text;
+            request.data=data;
             request.contentType = "multipart/form-data";
 
 
@@ -104,9 +116,9 @@
 
 
             //设置鼠标忙状态
-            CursorManager.setBusyCursor();
+//            CursorManager.setBusyCursor();
             try {
-                file.upload(request, 'file', true);
+                file.upload(request, 'file', false);
 
             }
             catch (error:Error) {
@@ -130,14 +142,16 @@
                 var result:Object = JParser.decode(e.data);
                 if (result.success == true) {
                     img.source = result.result.imgurl;
-
-                    var l:ArrayCollection = grid.dataProvider as ArrayCollection;
-                    if (l) {
-                        l.addItem(result.result);
-                        grid.invalidateList();
+                    if(templateobj!=null){
+                        templateobj.name = taxNo.text;
+                    }else{
+                        var l:ArrayCollection = grid.dataProvider as ArrayCollection;
+                        if (l) {
+                            l.addItem(result.result);
+                            grid.invalidateList();
+                        }
                     }
                     closeWin();
-
                 }
             } catch (error:Error) {
 

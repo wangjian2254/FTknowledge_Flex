@@ -17,14 +17,17 @@
         import control.CBorderContainer;
         import control.ChangePassword;
         import control.GuanControl;
+        import control.KJKMControl;
         import control.KaoShiControl;
         import control.KnowledgeEdit;
         import control.KnowledgeQuery;
+        import control.LogPanel;
         import control.LoginUser;
         import control.PaperControl;
         import control.RegisterUser;
         import control.SubjectControl;
         import control.TaxImageCreate;
+        import control.TaxImageTuZhangCreate;
         import control.TaxKindEdit;
         import control.TicketEdit;
         import control.UserControl;
@@ -267,6 +270,15 @@
                     break;
                 case 'guanqia':
                     c = new GuanControl();
+                    break;
+                case 'log':
+                    c = new LogPanel();
+                    break;
+                case 'kjkm':
+                    c = new KJKMControl();
+                    break;
+                case 'tuzhang':
+                    c = new TaxImageTuZhangCreate();
                     break;
 
 

@@ -21,6 +21,7 @@ public class ToolUtil {
         ticketRefresh();
         businessRefresh();
         kmRefresh();
+        tuzhangRefresh();
         guanRefresh();
     }
 
@@ -260,6 +261,29 @@ public class ToolUtil {
         if (result.success == true) {
             kmList.removeAll();
             kmList.addAll(new ArrayCollection(result.result as Array));
+        }
+    }
+
+    [Bindable]
+    public static var tuzhangList:ArrayCollection = new ArrayCollection();
+
+    public static function tuzhangRefresh(fun:Function = null):void {
+
+        if (fun == null) {
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTuZhangList", resultAllTuzhang, "POST").send();
+        } else {
+            var http:CHTTPService = HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTuZhangList", resultAllTuzhang, "POST");
+            http.resultFunArr.addItem(fun);
+            http.send();
+
+        }
+
+    }
+
+    public static function resultAllTuzhang(result:Object, e:ResultEvent):void {
+        if (result.success == true) {
+            tuzhangList.removeAll();
+            tuzhangList.addAll(new ArrayCollection(result.result as Array));
         }
     }
 

@@ -60,15 +60,15 @@ public class CHTTPService extends HTTPService {
                     for (var i:int = 0; i < resultFunArr.length; i++) {
                         f = resultFunArr.getItemAt(i) as Function;
                         if (f != null) {
-                            f(result, e);
+                            f(result,e);
+//                            f(result, e);
                         }
                     }
-
-
+                }else{
+                    Alert.show(result.message, "警告");
                 }
             } catch (error:Error) {
 
-                Alert.show(e.result.toString, "警告");
                 Alert.show("系统错误", "警告");
             }
 

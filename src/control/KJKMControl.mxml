@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="utf-8"?>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                          xmlns:s="library://ns.adobe.com/flex/spark"
+                          xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*" width="700" height="700"
+                          borderVisible="false" backgroundAlpha="0" xmlns:uicontrol="uicontrol.*">
+    <fx:Script>
+		<![CDATA[
+        import events.AutoGridEvent;
+        import events.CloseEvent;
+        import events.PageChangeEvent;
+
+        import httpcontrol.HttpServiceUtil;
+
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.events.FlexEvent;
+        import mx.events.ItemClickEvent;
+        import mx.rpc.events.ResultEvent;
+        import mx.rpc.http.HTTPService;
+        import mx.utils.ObjectUtil;
+
+        import util.DataUtil;
+        import util.ToolUtil;
+
+
+        [Bindable]
+        private var kjkmkindlist:ArrayCollection = new ArrayCollection([]);
+        [Bindable]
+        private var kjkmlist:ArrayCollection = new ArrayCollection([]);
+
+
+
+        private var tempKind:Object;
+        private var tempKJKM:Object;
+
+
+        private function resetFormData():void {
+            kindName.text = null;
+            kindDesc.text = null;
+            tempKind = null;
+
+
+        }
+
+        private function getFormData():Object {
+            var o:Object = {};
+            if (tempKind != null && tempKind.hasOwnProperty("id")) {
+                o['id'] = tempKind['id'];
+            } else {
+                o['id'] = "";
+            }
+
+            o["name"] = kindName.text;
+            o["desc"] = kindDesc.text;
+            return o;
+        }
+
+        private function setFormData(o:Object):void {
+            kindName.text = o["name"];
+            kindDesc.text = o["desc"];
+        }
+
+        private function isValid():Boolean {
+            var o:Object = getFormData();
+            if (o["name"] == "") {
+                Alert.show("名称不能为空", "提示");
+                return false;
+            }
+            return true;
+        }
+
+        private function addKind():void{
+            tempKind = null;
+            resetFormData();
+        }
+
+        private function seletKind():void {
+            var o:Object = kindGrid.selectedItem;
+            tempKind = o;
+            setFormData(o);
+
+            var data:Object = {};
+            data["kind"] = o["id"];
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKMByKind", function(result:Object, e:ResultEvent):void{
+                kjkmlist = new ArrayCollection(result.result.result as Array);
+            }, "POST").send(data);
+
+        }
+
+        private function seletKJKM():void {
+            var o:Object = kjkmGrid.selectedItem;
+            tempKJKM = o;
+            setFormKJKMData(o);
+
+
+        }
+        private function getFormKJKMData():Object {
+            var o:Object = {};
+            if (tempKJKM != null && tempKJKM.hasOwnProperty("id")) {
+                o['id'] = tempKJKM['id'];
+            } else {
+                o['id'] = "";
+            }
+
+            o["kmbh"] = kmbh.text;
+            o["name"] = kmmc.text;
+            if(!tempKind){
+                Alert.show("请选择一个会计科目分类", "提示");
+                return false;
+            }
+            o["kind"] = tempKind.id;
+            return o;
+        }
+
+        private function setFormKJKMData(o:Object):void {
+            kmbh.text = o["kmbh"];
+            kmmc.text = o["name"];
+        }
+        private function resetFormKJKMData():void {
+            kmbh.text = "";
+            kmmc.text = "";
+
+        }
+
+        private function isValidKJKM():Boolean {
+            var o:Object = getFormKJKMData();
+            if (o["kmbh"] == ""||o["kmbh"] == "") {
+                Alert.show("科目名称和科目编号不能为空", "提示");
+                return false;
+            }
+            if(!o['kind']){
+                Alert.show("请选择一个会计科目分类", "提示");
+                return false;
+            }
+            return true;
+        }
+
+        private function saveKJKM():void{
+            if(!isValidKJKM()){
+                return;
+            }
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateKJKM", function(result:Object,e:ResultEvent):void{
+                tempKJKM = getFormKJKMData();
+                tempKJKM.id = result.result;
+                seletKind();
+            },"POST").send(getFormKJKMData());
+        }
+
+        private function addKJKM():void{
+            tempKJKM = null;
+            resetFormKJKMData();
+        }
+        private function delKJKM():void{
+            var o:Object=new Object();
+            if (tempKJKM != null && tempKJKM.hasOwnProperty("id")) {
+                o['id'] = tempKJKM['id'];
+            } else {
+                Alert.show("请选择会计科目");
+                return;
+            }
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/delKJKM", function(result:Object,e:ResultEvent):void{
+                resetFormKJKMData();
+                seletKind();
+            },"POST").send(o);
+        }
+        private function saveKind():void{
+            if(!isValid()){
+                return;
+            }
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/updateKjkmKind", function(result:Object,e:ResultEvent):void{
+
+                tempKind = getFormData();
+                tempKind.id = result.result;
+//                kjkmlist = new ArrayCollection(result.result.kjkm as Array);
+                getAllKind();
+                var data:Object = {};
+                data["kind"] =tempKind.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKMByKind", function(result:Object, e:ResultEvent):void{
+                    kjkmlist = new ArrayCollection(result.result.result as Array);
+                }, "POST").send(data);
+
+            },"POST").send(getFormData());
+        }
+        private function delKind():void{
+            var o:Object=new Object();
+            if (tempKind != null && tempKind.hasOwnProperty("id")) {
+                o['id'] = tempKind['id'];
+            } else {
+                Alert.show("请选择会计科目分类");
+                return;
+            }
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/delKjkmKind", function(result:Object,e:ResultEvent):void{
+                resetFormData();
+                getAllKind();
+            },"POST").send(o);
+        }
+
+
+        private function getAllKind():void{
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKind", function(result:Object,e:ResultEvent):void{
+                kjkmkindlist = new ArrayCollection(result.result.result as Array);
+            }, "POST").send();
+        }
+
+        override public function init(e:FlexEvent):void {
+            getAllKind();
+        }
+
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+        }
+
+
+        private function typeShow(item:Object, column:GridColumn):String {
+            if (item.type == 1) {
+                return "选择题";
+            } else {
+                return "凭证题";
+            }
+        }
+        ]]>
+	</fx:Script>
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+    </fx:Declarations>
+    <s:BorderContainer top="5" bottom="5" left="5" right="5" borderVisible="false" color="0x333333"
+                       skinClass="skins.contentBoxSkin">
+        <s:layout>
+            <s:HorizontalLayout>
+
+            </s:HorizontalLayout>
+        </s:layout>
+       <s:VGroup width="350" height="100%" gap="10" >
+           <s:HGroup verticalAlign="middle">
+               <s:Label text="关键字:" verticalAlign="middle">
+               </s:Label>
+               <s:TextInput id="kindKey" width="100%">
+               </s:TextInput>
+               <s:Button height="25" chromeColor="#ff0000" color="#ffffff" label="过滤"></s:Button>
+
+           </s:HGroup>
+           <s:DataGrid id="kindGrid" height="100%" width="100%" dataProvider="{kjkmkindlist}" showDataTips="true"
+                       selectionChange="seletKind();">
+               <s:columns>
+                   <s:ArrayList>
+                       <s:GridColumn headerText="名称" width="120" dataField="name" dataTipField="name"  >
+
+                       </s:GridColumn>
+                       <s:GridColumn headerText="备注"  dataField="desc" dataTipField="desc"  >
+
+                       </s:GridColumn>
+                   </s:ArrayList>
+               </s:columns>
+           </s:DataGrid>
+       </s:VGroup>
+        <s:Scroller width="100%" height="100%">
+            <s:VGroup width="100%" >
+                <s:Form width="100%" >
+                    <s:layout>
+                        <s:FormLayout gap="0"></s:FormLayout>
+                    </s:layout>
+                    <s:FormHeading label="会计科目分类"></s:FormHeading>
+                    <s:FormItem label="分类名称">
+                        <s:TextInput width="400" id="kindName"></s:TextInput>
+                    </s:FormItem>
+                    <s:FormItem label="分类描述">
+                        <s:TextArea id="kindDesc" width="400" height="50"></s:TextArea>
+                    </s:FormItem>
+
+                    <mx:ControlBar>
+                        <s:Button label="保存" click="saveKind()" chromeColor="#ff0000" color="#ffffff" height="25"></s:Button>
+                        <s:Button label="删除" click="delKind()" height="25"></s:Button>
+                        <s:Button height="25"  label="新增" click="addKind()"></s:Button>
+                    </mx:ControlBar>
+                </s:Form>
+                <s:Form width="100%">
+                    <s:layout>
+                        <s:FormLayout gap="0"></s:FormLayout>
+                    </s:layout>
+                    <s:FormHeading label="会计科目"></s:FormHeading>
+                    <s:FormItem label="科目编号">
+                        <s:TextInput width="400" id="kmbh" ></s:TextInput>
+                    </s:FormItem>
+                    <s:FormItem label="科目名称">
+                        <s:TextInput width="400" id="kmmc" ></s:TextInput>
+                    </s:FormItem>
+
+                    <mx:ControlBar>
+                        <s:Button label="保存" click="saveKJKM()" chromeColor="#ff0000" color="#ffffff" height="25"></s:Button>
+                        <s:Button label="删除" click="delKJKM()" height="25"></s:Button>
+                        <s:Button label="新增" click="addKJKM()" height="25"></s:Button>
+                    </mx:ControlBar>
+                </s:Form>
+                <s:DataGrid id="kjkmGrid" height="400" width="100%" dataProvider="{kjkmlist}" showDataTips="true"
+                            selectionChange="seletKJKM();">
+                    <s:columns>
+                        <s:ArrayList>
+                            <s:GridColumn headerText="科目编号" width="300" dataField="kmbh" dataTipField="name"  >
+
+                            </s:GridColumn>
+                            <s:GridColumn headerText="科目名称"  dataField="name" dataTipField="name"  >
+
+                            </s:GridColumn>
+                        </s:ArrayList>
+                    </s:columns>
+                </s:DataGrid>
+            </s:VGroup>
+        </s:Scroller>
+    </s:BorderContainer>
+</control:CBorderContainer>
