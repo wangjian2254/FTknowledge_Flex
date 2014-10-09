@@ -6,6 +6,8 @@
                xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:uicontrol="uicontrol.*" width="400" height="500"
                close="closeWin()" creationComplete="init()" title="添加模板">
     <fx:Script><![CDATA[
+        import httpcontrol.HttpServiceUtil;
+
         import json.JParser;
 
         import mx.collections.ArrayCollection;
@@ -15,19 +17,21 @@
         import mx.events.CloseEvent;
         import mx.managers.CursorManager;
         import mx.managers.PopUpManager;
+        import mx.rpc.events.ResultEvent;
 
         [Bindable]
-        public var orderdata:Object;
+//        public var orderdata:Object;
 
         public var grid:DataGrid;
 
         public var url:String="/tax/taxTemplateUploaded";
+        public var saveurl:String="/tax/saveTemplate";
         private var file:FileReference;
         private var byteArray:ByteArray;
         private var bitmapData:BitmapData;
         private var loader:Loader = new Loader();
 
-        public var templateobj=null;
+        public var templateobj:Object=null;
         private function init():void {
             file = new FileReference();
             file.addEventListener(Event.SELECT, fileReferenceSelectHandler);
@@ -71,15 +75,35 @@
         }
 
         private function toUpload():void {
-            if (bitmapData == null) {
+            if (!templateobj.hasOwnProperty('id')&&bitmapData == null) {
                 Alert.show("请您先选择要上传的图片");
             }
             else {
-                if (byteArray != null) {
-                    file.removeEventListener(Event.COMPLETE, fileReferenceCompleteHandler);
-                    file.addEventListener(Event.COMPLETE, completeHandle);
-                    proceedWithUpload();
+                if(templateobj.hasOwnProperty('id')&&bitmapData == null){
+                    var data:Object=new Object();
+                    data["id"] = templateobj.id;
+                    data['name'] = taxNo.text;
+                    HttpServiceUtil.getCHTTPServiceAndResult(saveurl, function(result:Object, e:ResultEvent):void{
+                        if(templateobj!=null){
+                            templateobj.name = taxNo.text;
+                        }else{
+                            var l:ArrayCollection = grid.dataProvider as ArrayCollection;
+                            if (l) {
+                                l.addItem(result.result);
+
+                            }
+                        }
+                        grid.invalidateList();
+                        closeWin();
+                    }, "POST").send(data);
+                }else{
+                    if (byteArray != null) {
+                        file.removeEventListener(Event.COMPLETE, fileReferenceCompleteHandler);
+                        file.addEventListener(Event.COMPLETE, completeHandle);
+                        proceedWithUpload();
+                    }
                 }
+
 //                Alert.show("上传 " + file.name + " (共 " + Math.round(file.size) + " 字节)?", "确认上传", Alert.YES | Alert.NO, null, proceedWithUpload);
             }
         }
@@ -148,9 +172,9 @@
                         var l:ArrayCollection = grid.dataProvider as ArrayCollection;
                         if (l) {
                             l.addItem(result.result);
-                            grid.invalidateList();
                         }
                     }
+                    grid.invalidateList();
                     closeWin();
                 }
             } catch (error:Error) {

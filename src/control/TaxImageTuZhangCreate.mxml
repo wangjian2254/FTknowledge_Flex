@@ -49,6 +49,7 @@
             if (result.success) {
                 taxlist.removeAll();
                 taxlist.addAll(new ArrayCollection(result.result as Array));
+                taxlist.filterFunction = filerTaxName;
             }
         }
 
@@ -67,6 +68,7 @@
                     this, Confirm, true) as TitleWindow);
             templateCreater.grid = taxtemplateGrid;
             templateCreater.url = "/tax/taxTuZhangUploaded";
+            templateCreater.saveurl = "/tax/saveTuZhang";
             templateCreater.x = (this.width - templateCreater.width) / 2;
             templateCreater.y = (this.height - templateCreater.height) / 2;
         }
@@ -80,6 +82,7 @@
                     this, Confirm, true) as TitleWindow);
             templateCreater.grid = taxtemplateGrid;
             templateCreater.url = "/tax/taxTuZhangUploaded";
+            templateCreater.saveurl = "/tax/saveTuZhang";
             templateCreater.templateobj = taxtemplateGrid.selectedItem;
             templateCreater.x = (this.width - templateCreater.width) / 2;
             templateCreater.y = (this.height - templateCreater.height) / 2;
@@ -106,6 +109,19 @@
 
 
         }
+
+        private function filerTaxName(item:Object):Boolean {
+            if (filterInput.text.length==0||item.name.indexOf(filterInput.text) > -1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private function filterTax():void{
+            taxlist.refresh();
+        }
+
         ]]>
 	</fx:Script>
     <fx:Declarations>
@@ -118,6 +134,9 @@
                 <s:Button label="添加" chromeColor="red" color="#ffffff" click="createTemplate()" height="30"></s:Button>
                 <s:Button label="修改" click="updateTemplate()" height="30"></s:Button>
                 <s:Button label="删除" click="deleteTemplate()" height="30"></s:Button>
+            </s:HGroup>
+            <s:HGroup gap="10" width="100%">
+                <s:TextInput prompt="过滤" width="90%" id="filterInput" change="filterTax()"></s:TextInput>
             </s:HGroup>
             <mx:DataGrid width="100%" height="100%" id="taxtemplateGrid" doubleClickEnabled="true"
                          itemClick="selectTemplate()"
