@@ -35,8 +35,7 @@
 
         private function getTemplateDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
-                taxlist.removeAll();
-                taxlist.addAll(new ArrayCollection(result.result as Array));
+                taxlist=new ArrayCollection(result.result as Array);
             }
         }
 
@@ -53,15 +52,13 @@
 
         private function getRuleDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
-                rulelist.removeAll();
-                rulelist.addAll(new ArrayCollection(result.result as Array));
+                rulelist=new ArrayCollection(result.result as Array);
             }
         }
 
         private function getRuleDataResult2(result:Object, e:ResultEvent):void {
             if (result.success) {
-                rulelist.removeAll();
-                rulelist.addAll(new ArrayCollection(result.result as Array));
+                rulelist=new ArrayCollection(result.result as Array);
                 ruleItem = null;
                 for each(var item:Object in rulelist) {
                     if (item.id == tempSubject['ruleid']) {
@@ -134,8 +131,7 @@
 //                } else {
 //                    arr = result.result.result is Array ? result.result.result : [];
 //                }
-                subjectArr.removeAll();
-                subjectArr.addAll(new ArrayCollection(arr));
+                subjectArr=new ArrayCollection(arr);
             }
         }
 
@@ -198,13 +194,8 @@
 
         private function resetFormData():void {
             title.text = "";
-
-            if (optionGrid.dataProvider == null) {
-                optionGrid.dataProvider = new ArrayCollection();
-            } else {
-                optionGrid.dataProvider.removeAll();
-            }
-            pzEdit.fllist.removeAll();
+            optionGrid.dataProvider = new ArrayCollection();
+            pzEdit.fllist = new ArrayCollection();
             bz.text = "";
             flagInput.text = "";
             taxtemplateRule.selectedItem = null;
@@ -279,10 +270,6 @@
                 }, "POST").send(parm);
             }
 
-//				var dp:ArrayCollection=optionGrid.dataProvider as ArrayCollection;
-//				dp.removeAll();
-//				var optiosArr:Array= o["options"] is Array?o["options"]:[];
-//				dp.addAll(new ArrayCollection(o["options"]));
 
         }
 

@@ -178,7 +178,7 @@
                 data["kind"] = kjkmkind.id;
                 HttpServiceUtil.getCHTTPServiceAndResult("/tax/getAllKMLabelByKind", getAllKMByKindResult, "POST").send(data);
             }else{
-                kjkm.removeAll();
+                kjkm= new ArrayCollection();
             }
 
 

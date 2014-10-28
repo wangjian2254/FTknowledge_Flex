@@ -75,11 +75,11 @@
         }
 
         private function toUpload():void {
-            if (!templateobj.hasOwnProperty('id')&&bitmapData == null) {
+            if (templateobj!=null&&!templateobj.hasOwnProperty('id')&&bitmapData == null) {
                 Alert.show("请您先选择要上传的图片");
             }
             else {
-                if(templateobj.hasOwnProperty('id')&&bitmapData == null){
+                if(templateobj!=null&&templateobj.hasOwnProperty('id')&&bitmapData == null){
                     var data:Object=new Object();
                     data["id"] = templateobj.id;
                     data['name'] = taxNo.text;

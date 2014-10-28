@@ -208,7 +208,7 @@
             kjkmKindList.selectedItem=null;
             flagInput.text = "";
             paper_time.value= 5;
-            paperSubjectArr.removeAll();
+            paperSubjectArr=new ArrayCollection();
             tempPaper = null;
             guanComboBox.selectedItem=null;
 

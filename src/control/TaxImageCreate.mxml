@@ -60,9 +60,9 @@
 
         private function getTemplateDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
-                taxlist.removeAll();
-                taxlist.addAll(new ArrayCollection(result.result as Array));
+                taxlist=new ArrayCollection(result.result as Array);
                 taxlist.filterFunction = filerTaxName;
+
             }
         }
 
@@ -80,9 +80,8 @@
 
         private function getRuleDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
-                rulelist.removeAll();
-                rulelist.addAll(new ArrayCollection(result.result as Array));
-                ruleItemList.removeAll();
+                rulelist =new ArrayCollection(result.result as Array);
+                ruleItemList=new ArrayCollection();
                 ruleItem = null;
             }
         }
@@ -115,10 +114,12 @@
             }
             var data:Object = new Object();
             data["templateid"] = taxtemplateGrid.selectedItem.id;
-            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteTemplate", function(result:Object,e:ResultEvent):void{
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteTemplate",function(result:Object,event:ResultEvent):void{
+                taxlist.removeItemAt(taxlist.getItemIndex(taxtemplateGrid.selectedItem));
                 getTemplateList();
-            }, "POST").send(data);
+            } , "POST").send(data);
         }
+
 
         private function createRule():void {
             if (!taxtemplateGrid.selectedItem) {
@@ -159,8 +160,7 @@
 
         private function getRuleItemDataResult(result:Object, e:ResultEvent):void {
             if (result.success) {
-                ruleItemList.removeAll();
-                ruleItemList.addAll(new ArrayCollection(result.result as Array));
+                ruleItemList=new ArrayCollection(result.result as Array);
 
                 taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id +"&flag="+(showZB.selected?"1":"0")+ "&t=" + new Date();
             }

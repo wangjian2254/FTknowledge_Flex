@@ -73,8 +73,7 @@ public class ToolUtil {
 
     public static function resultAllUser(result:Object, e:ResultEvent):void {
         if (result.message.success == true) {
-            userList.removeAll();
-            userList.addAll(new ArrayCollection(result.userslist as Array));
+            userList = new ArrayCollection(result.userslist as Array);
         }
     }
 
@@ -97,8 +96,7 @@ public class ToolUtil {
 
     public static function resultAllDept(result:Object, e:ResultEvent):void {
         if (result.message.success == true) {
-            deptList.removeAll();
-            deptList.addAll(new ArrayCollection(result.deptvolist as Array));
+            deptList = new ArrayCollection(result.deptvolist as Array);
         }
     }
 
@@ -121,8 +119,7 @@ public class ToolUtil {
 
     public static function resultAllArea(result:Object, e:ResultEvent):void {
         if (result.message.success == true) {
-            areaList.removeAll();
-            areaList.addAll(new ArrayCollection(result.areapointvolist as Array));
+            areaList = new ArrayCollection(result.areapointvolist as Array);
         }
     }
 
@@ -144,8 +141,7 @@ public class ToolUtil {
 
     public static function resultAllHy(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            hyList.removeAll();
-            hyList.addAll(new ArrayCollection(result.result as Array));
+            hyList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -167,8 +163,7 @@ public class ToolUtil {
 
     public static function resultAllKjkm(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            kjkmList.removeAll();
-            kjkmList.addAll(new ArrayCollection(result.result as Array));
+            kjkmList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -190,8 +185,7 @@ public class ToolUtil {
 
     public static function resultAllBB(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            bbList.removeAll();
-            bbList.addAll(new ArrayCollection(result.result as Array));
+            bbList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -213,8 +207,7 @@ public class ToolUtil {
 
     public static function resultAllTicket(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            ticketList.removeAll();
-            ticketList.addAll(new ArrayCollection(result.result as Array));
+            ticketList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -236,8 +229,7 @@ public class ToolUtil {
 
     public static function resultAllBusiness(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            businessList.removeAll();
-            businessList.addAll(new ArrayCollection(result.result as Array));
+            businessList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -259,8 +251,7 @@ public class ToolUtil {
 
     public static function resultAllKM(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            kmList.removeAll();
-            kmList.addAll(new ArrayCollection(result.result as Array));
+            kmList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -282,8 +273,7 @@ public class ToolUtil {
 
     public static function resultAllTuzhang(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            tuzhangList.removeAll();
-            tuzhangList.addAll(new ArrayCollection(result.result as Array));
+            tuzhangList = new ArrayCollection(result.result as Array);
         }
     }
 
@@ -306,8 +296,7 @@ public class ToolUtil {
 
     public static function resultAllGuan(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            guanList.removeAll();
-            guanList.addAll(new ArrayCollection(result.result.result as Array));
+            guanList = new ArrayCollection(result.result.result as Array);
         }
     }
 
@@ -338,8 +327,7 @@ public class ToolUtil {
 
     public static function resultAllRule(result:Object, e:ResultEvent):void {
         if (result.success == true) {
-            ruleList.removeAll();
-            ruleList.addAll(new ArrayCollection(result.result as Array));
+            ruleList = new ArrayCollection(result.result as Array);
         }
     }
 

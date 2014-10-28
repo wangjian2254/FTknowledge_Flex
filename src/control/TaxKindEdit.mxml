@@ -166,8 +166,8 @@
 
             if (e.label == '增加会计科目') {
                 if (kindTree.selectedItem && kindTree.selectedItem.type == "ticket") {
-                    kjkmlist.removeAll();
-                    tempkjkmlist.removeAll();
+                    kjkmlist=new ArrayCollection();
+                    tempkjkmlist=new ArrayCollection();
                     btnSaveKJKM.enabled = true;
                     kjkmTicket.text = kindTree.selectedItem.name;
                     kjkmKind.text = kindTree.getParentItem(kindTree.selectedItem).name;

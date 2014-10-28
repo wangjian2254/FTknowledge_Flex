@@ -60,6 +60,8 @@ public class CHTTPService extends HTTPService {
                     for (var i:int = 0; i < resultFunArr.length; i++) {
                         f = resultFunArr.getItemAt(i) as Function;
                         if (f != null) {
+//                            f.call(this,result,e);
+
                             f(result,e);
 //                            f(result, e);
                         }
