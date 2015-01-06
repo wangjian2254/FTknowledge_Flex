@@ -123,27 +123,7 @@ public class ToolUtil {
         }
     }
 
-    [Bindable]
-    public static var hyList:ArrayCollection = new ArrayCollection();
 
-    public static function hyRefresh(fun:Function = null):void {
-
-        if (fun == null) {
-            HttpServiceUtil.getCHTTPServiceAndResult("/ft/getHyList", resultAllHy, "POST").send();
-        } else {
-            var http:CHTTPService = HttpServiceUtil.getCHTTPServiceAndResult("/ft/getHyList", resultAllHy, "POST");
-            http.resultFunArr.addItem(fun);
-            http.send();
-
-        }
-
-    }
-
-    public static function resultAllHy(result:Object, e:ResultEvent):void {
-        if (result.success == true) {
-            hyList = new ArrayCollection(result.result as Array);
-        }
-    }
 
     [Bindable]
     public static var kjkmList:ArrayCollection = new ArrayCollection();

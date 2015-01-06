@@ -19,8 +19,8 @@
         import control.GuanControl;
         import control.KJKMControl;
         import control.KaoShiControl;
-        import control.KnowledgeEdit;
-        import control.KnowledgeQuery;
+//        import control.KnowledgeEdit;
+//        import control.KnowledgeQuery;
         import control.LogPanel;
         import control.LoginUser;
         import control.PaperControl;
@@ -28,7 +28,8 @@
         import control.SubjectControl;
         import control.TaxImageCreate;
         import control.TaxImageTuZhangCreate;
-        import control.TaxKindEdit;
+//        import control.TaxKindEdit;
+//        import control.TaxTableCreate;
         import control.TicketEdit;
         import control.UserControl;
 
@@ -60,7 +61,8 @@
             ToolUtil.sessionUserRefresh(currentUser);
             menuXML.send();
             gongNengStack.addEventListener(ChangeMenuEvent.ChangeMenu_EventStr, changeMenu);
-            ToolUtil.hyRefresh(welcome);
+            welcome(null,null);
+//            ToolUtil.hyRefresh(welcome);
 
         }
 
@@ -232,18 +234,16 @@
                 case 'people':
                     c = new UserControl();
                     break;
-                case 'knowledgeedit':
-                    c = new KnowledgeEdit();
-                    break;
-                case 'taxkind':
-                    c = new TaxKindEdit();
-                    break;
+//                case 'knowledgeedit':
+//                    c = new KnowledgeEdit();
+//                    break;
+//                case 'taxkind':
+//                    c = new TaxKindEdit();
+//                    break;
                 case 'bbedit':
                     c = new BBEdit();
                     break;
-                case 'knowledgequery':
-                    c = new KnowledgeQuery();
-                    break;
+
                 case 'autokjedit':
                     c = new AutoKJEdit();
                     break;
@@ -280,6 +280,9 @@
                 case 'tuzhang':
                     c = new TaxImageTuZhangCreate();
                     break;
+//                case 'taxtable':
+//                    c = new TaxTableCreate();
+//                    break;
 
 
             }

@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!--
+  Created by WangJian on 2014/11/10.
+-->
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009" xmlns:s="library://ns.adobe.com/flex/spark">
+  <fx:Script><![CDATA[
+    private var _item:Object=new Object();
+
+    public function set item(i:Object):void{
+        _item = i;
+
+      nameInput.text = _item['name'];
+      fieldInput.text = _item['field'];
+      valueInput.text = _item['value'];
+      typeGroup.selectedValue = _item['type'];
+      styleGroup.selectedValue = _item['stype'];
+    }
+
+    public function get item():Object{
+      _item["name"]=nameInput.text;
+      _item["field"]=fieldInput.text;
+      _item["value"]=valueInput.text;
+      _item["type"]=typeGroup.selectedValue;
+      _item["stype"]=styleGroup.selectedValue;
+      return _item;
+    }
+
+    ]]></fx:Script>
+  <fx:Declarations>
+    <s:RadioButtonGroup id="typeGroup"></s:RadioButtonGroup>
+    <s:RadioButtonGroup id="styleGroup"></s:RadioButtonGroup>
+  </fx:Declarations>
+  <s:Form >
+    <s:FormItem label="含义">
+      <s:TextInput width="90%" id="nameInput" ></s:TextInput>
+    </s:FormItem>
+    <s:FormItem label="字段名">
+      <s:TextInput width="90%" id="fieldInput"></s:TextInput>
+    </s:FormItem>
+    <s:FormItem label="内容">
+      <s:TextInput width="90%" id="valueInput"></s:TextInput>
+    </s:FormItem>
+
+    <s:FormItem label="类型">
+     <s:RadioButton group="typeGroup" label="Label" value="1" selected="true"/>
+     <s:RadioButton group="typeGroup" label="输入框" value="2"/>
+    </s:FormItem>
+
+    <s:FormItem label="样式">
+      <s:RadioButton group="styleGroup" label="背景透明" value="1" selected="true"/>
+      <s:RadioButton group="styleGroup" label="背景透明，获取焦点时，背景变为白色"  value="2"/>
+      <s:RadioButton group="styleGroup" label="背景透明，获取焦点时，加上蓝色边框"  value="3"/>
+    </s:FormItem>
+    <s:FormItem>
+      <s:Button height="25" chromeColor="#ff0000" color="#ffffff" label="保存"></s:Button>
+    </s:FormItem>
+  </s:Form>
+</s:TitleWindow>

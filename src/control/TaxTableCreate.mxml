@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="utf-8"?>
+<control:CBorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009"
+                          xmlns:s="library://ns.adobe.com/flex/spark"
+                          xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:control="control.*"
+                          xmlns:uicontrol="uicontrol.*"
+                          width="700" height="500" borderVisible="false" backgroundAlpha="0" top="5" bottom="5" left="5"
+                          right="5">
+    <fx:Script>
+		<![CDATA[
+        import events.ChonXinHua;
+        import events.CloseEvent;
+
+        import httpcontrol.HttpServiceUtil;
+
+        import mx.collections.ArrayCollection;
+        import mx.controls.Alert;
+        import mx.core.FlexGlobals;
+        import mx.events.DataGridEvent;
+        import mx.events.FlexEvent;
+        import mx.events.ItemClickEvent;
+        import mx.managers.PopUpManager;
+        import mx.rpc.events.ResultEvent;
+
+        import spark.components.TitleWindow;
+
+        import uicontrol.BigImage;
+
+        import uicontrol.Confirm;
+        import uicontrol.RuleConfirm;
+        import uicontrol.TaxTableItem;
+
+        import util.ToolUtil;
+
+        [Bindable]
+        private var taxlist:ArrayCollection = new ArrayCollection();
+        [Bindable]
+        private var rulelist:ArrayCollection = new ArrayCollection();
+
+        [Bindable]
+        private var ruleItemList:ArrayCollection = new ArrayCollection();
+
+
+        [Bindable]
+        public var familylist:ArrayCollection = new ArrayCollection([
+            {"id": 1, "text": "仿宋"}
+        ]);
+
+        override public function init(e:FlexEvent):void {
+            getTemplateList();
+
+
+        }
+
+        override public function closeContainer(e:CloseEvent):void {
+            dispatchEvent(e);
+
+        }
+
+        private function getTemplateList():void {
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/getTemplateList", getTemplateDataResult, "POST").send();
+        }
+
+        private function getTemplateDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                taxlist=new ArrayCollection(result.result as Array);
+                taxlist.filterFunction = filerTaxName;
+
+            }
+        }
+
+        private var tempItem:Object = null;
+
+        private function selectTemplate():void {
+            if (taxtemplateGrid.selectedItem != tempItem) {
+                var data:Object = new Object();
+                data["templateid"] = taxtemplateGrid.selectedItem.id;
+//                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList", getRuleDataResult, "POST").send(data);
+                tempItem = taxtemplateGrid.selectedItem;
+                taxTable.setStyle("backgroundImage",tempItem.imgurl);
+                rulelist.removeAll();
+            }
+        }
+
+        private function getRuleDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                rulelist =new ArrayCollection(result.result as Array);
+                ruleItemList=new ArrayCollection();
+                ruleItem = null;
+            }
+        }
+
+        private function createTemplate():void {
+            var templateCreater:Confirm = Confirm(PopUpManager.createPopUp(
+                    this, Confirm, true) as TitleWindow);
+            templateCreater.grid = taxtemplateGrid;
+            templateCreater.x = (this.width - templateCreater.width) / 2;
+            templateCreater.y = (this.height - templateCreater.height) / 2;
+        }
+
+        private function updateTemplate():void {
+            if(taxtemplateGrid.selectedItem==null){
+                Alert.show("请选择模板","提示")
+                return;
+            }
+            var templateCreater:Confirm = Confirm(PopUpManager.createPopUp(
+                    this, Confirm, true) as TitleWindow);
+            templateCreater.grid = taxtemplateGrid;
+            templateCreater.templateobj = taxtemplateGrid.selectedItem;
+            templateCreater.x = (this.width - templateCreater.width) / 2;
+            templateCreater.y = (this.height - templateCreater.height) / 2;
+        }
+
+        private function deleteTemplate():void{
+            if(taxtemplateGrid.selectedItem==null){
+                Alert.show("请选择一个模板","提示");
+                return ;
+            }
+            var data:Object = new Object();
+            data["templateid"] = taxtemplateGrid.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteTemplate",function(result:Object,event:ResultEvent):void{
+                taxlist.removeItemAt(taxlist.getItemIndex(taxtemplateGrid.selectedItem));
+                getTemplateList();
+            } , "POST").send(data);
+        }
+
+
+        private var tableItem:TaxTableItem;
+        private function createRule():void {
+            if (!taxtemplateGrid.selectedItem) {
+                Alert.show("请选择一个票据模板", "提示");
+                return;
+            }
+            var item:Object = new Object();
+            item.id = "field"+(new Date()).getTime();
+            item.name = "新控件";
+            item.value = "显示值";
+            item.field = "field1";
+            item.x =0;
+            item.y = 0;
+            item.type = 2;
+            item.stype = 1;
+            if(tableItem==null){
+                tableItem = PopUpManager.createPopUp(this, TaxTableItem, true) as TaxTableItem;
+                tableItem.x = (this.width - tableItem.width) / 2;
+                tableItem.y = (this.height - tableItem.height) / 2;
+                tableItem.addEventListener(FlexEvent.CREATION_COMPLETE, function(e:FlexEvent):void{
+                    tableItem.item = item;
+                });
+                tableItem.addEventListener(ChonXinHua.CHONGXINHUA, chongxinhua);
+            }else{
+                tableItem.item = item;
+            }
+            PopUpManager.bringToFront(tableItem);
+
+        }
+
+        private var controlMap:Object=new Object();
+        private function chongxinhua(e:ChonXinHua):void{
+
+        }
+
+        private  function  deleteRule():void{
+            if (!taxtemplateRule.selectedItem) {
+                Alert.show("请选择一个规则", "提示");
+                return;
+            }
+            var data:Object = new Object();
+            data["ruleid"] = taxtemplateRule.selectedItem.id;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/deleteRule", function(result:Object,e:ResultEvent):void{
+                tempItem=null;
+                selectTemplate();
+            }, "POST").send(data);
+        }
+
+        private var ruleItem:Object = null;
+
+        private function selectRule():void {
+            if (taxtemplateRule.selectedItem != ruleItem) {
+                var data:Object = new Object();
+                data["ruleid"] = taxtemplateRule.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleItemByRuleList", getRuleItemDataResult, "POST").send(data);
+                ruleItem = taxtemplateRule.selectedItem;
+            }
+        }
+
+        private function getRuleItemDataResult(result:Object, e:ResultEvent):void {
+            if (result.success) {
+                ruleItemList=new ArrayCollection(result.result as Array);
+
+//                taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id +"&flag="+(showZB.selected?"1":"0")+ "&t=" + new Date();
+            }
+        }
+
+        private function templateUpdate(event:DataGridEvent):void {
+            var data:Object = taxlist.getItemAt(event.rowIndex);
+
+            if (taxtemplateGrid.itemEditorInstance.data[event.dataField] == taxtemplateGrid.itemEditorInstance[taxtemplateGrid.columns[event.columnIndex].editorDataField]) {
+                return;
+            }
+            data[event.dataField] = taxtemplateGrid.itemEditorInstance[taxtemplateGrid.columns[event.columnIndex].editorDataField];
+
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveTemplate", null, "POST").send(data);
+
+        }
+
+        private function ruleUpdate(event:DataGridEvent):void {
+            var data:Object = rulelist.getItemAt(event.rowIndex);
+            if (taxtemplateRule.itemEditorInstance.data[event.dataField] == taxtemplateRule.itemEditorInstance[taxtemplateRule.columns[event.columnIndex].editorDataField]) {
+                return;
+            }
+            data[event.dataField] = taxtemplateRule.itemEditorInstance[taxtemplateRule.columns[event.columnIndex].editorDataField];
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRule", null, "POST").send(data);
+        }
+
+        private function clickHander(e:ItemClickEvent):void {
+            if (e.label == "新增") {
+//                ruleitemgrid.addNewItem();
+
+            }
+            if (e.label == "删除") {
+                del();
+
+            }
+//                if(e.label=="保存"){
+//                    saveRuleItem();
+//                }
+            if (e.label == "刷新图片") {
+                saveRuleItem();
+            }
+            if (e.label == "拷贝规则") {
+                copyRuleItem();
+            }
+        }
+
+        public function del():void {
+            var userArr:Array = new Array();
+            var obj:Object;
+            var item:Object;
+            for (var i:int = ruleItemList.length - 1; i >= 0; i--) {
+                item = ruleItemList.getItemAt(i);
+                if (!item.selected) {
+                    continue;
+                }
+                if (item.hasOwnProperty("id")) {
+                    userArr.push(item.id);
+                } else {
+                    ruleItemList.removeItemAt(i);
+                }
+            }
+            var data:Object = new Object();
+            data["ruleitemids"] = userArr;
+            HttpServiceUtil.getCHTTPServiceAndResult("/tax/delRuleItemByids", delRuleItemByidsResult, "POST").send(data);
+//            ruleitemgrid.invalidateList();
+        }
+
+        private function delRuleItemByidsResult(result:Object, event:ResultEvent):void {
+            if (result.success) {
+                var item:Object;
+                for (var i:int = ruleItemList.length - 1; i >= 0; i--) {
+                    item = ruleItemList.getItemAt(i);
+                    if (!item.selected) {
+                        continue;
+                    }
+                    ruleItemList.removeItemAt(i);
+                }
+//                ruleitemgrid.invalidateList();
+            }
+        }
+
+        private function copyRuleItem():void{
+            if (taxtemplateRule.selectedItem) {
+                var data:Object = new Object();
+                data["ruleid"] = taxtemplateRule.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/copyRuleItem", copyRuleItemResult, "POST").send(data);
+            }
+        }
+        private function copyRuleItemResult(result:Object, event:ResultEvent):void {
+            if (result.success) {
+                var data:Object = new Object();
+                data["templateid"] = taxtemplateGrid.selectedItem.id;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/getRuleByTemplateList", getRuleDataResult, "POST").send(data);
+            }
+        }
+
+        private function saveRuleItem():void {
+            if (taxtemplateRule.selectedItem) {
+
+                var data:Object = new Object();
+                data["ruleid"] = taxtemplateRule.selectedItem.id;
+                var obj:Object = null;
+                for (var k:int =  ruleItemList.length-1; k >=0; k--) {
+                    obj = ruleItemList.getItemAt(k);
+
+                    if (!obj.x && !obj.y && !obj.size ) {
+                        ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
+                        continue;
+                    }
+                    if(obj.tuzhang){
+                        if(!obj.x || !obj.y ){
+                            Alert.show("使用图章需设定x、y值", "警告");
+                            return;
+                        }
+                    }else if(!obj.x || !obj.y || !obj.size || !obj.family || obj.word==='') {
+                        Alert.show("请填写必要参数", "警告");
+                        return;
+                    }
+                }
+                for (var i:int = 0; i < ruleItemList.length; i++) {
+                    obj = ruleItemList.getItemAt(i);
+                    if (obj.hasOwnProperty("id")) {
+                        data["id" + i] = obj.id;
+                    }
+                    obj.index = i + 1;
+                    if (!obj.x && !obj.y && !obj.size ) {
+                        ruleItemList.removeItemAt(ruleItemList.getItemIndex(obj));
+                        continue;
+                    }
+
+                    data["index" + i] = obj.index;
+                    data["x" + i] = obj.x;
+                    data["y" + i] = obj.y;
+                    data["size" + i] = obj.size;
+                    if (isNaN(obj.color)) {
+                        obj.color = 0;
+                    }
+                    data["color" + i] = Number(obj.color);
+                    data["family" + i] = obj.family;
+                    data["word" + i] = obj.word;
+                    data["tuzhang" + i] = obj.tuzhang;
+
+                }
+                data['num'] = ruleItemList.length;
+                HttpServiceUtil.getCHTTPServiceAndResult("/tax/saveRuleItem", saveRuleItemResult, "POST").send(data);
+
+            }
+        }
+
+        private function saveRuleItemResult(result:Object, event:ResultEvent):void {
+            if (result.success) {
+                for (var i:int = 0; i < ruleItemList.length; i++) {
+                    ruleItemList.getItemAt(i)["id"] = result.result["ids"][i];
+                }
+//                ruleitemgrid.invalidateList();
+//                taxImg.source = '/tax/showTaxImage?ruleid=' + ruleItem.id +"&flag="+(showZB.selected?"1":"0")+ "&t=" + new Date();
+            }
+        }
+
+
+        [Bindable]
+        private var btnlist:ArrayCollection = new ArrayCollection([
+            {'label': '新增', 'ico': addimg},
+            {'label': '删除', 'ico': delimg},
+            {'label': '刷新图片', 'ico': refreshimg},
+            {'label': '拷贝规则', 'ico': saveimg}
+        ]);
+
+
+//        public function fontFamilyFun(item:Object, column:AdvancedDataGridColumn):String {
+//            for each(var obj:Object in familylist) {
+//                if (obj.id == item.family) {
+//                    return obj.text;
+//                }
+//            }
+//            return "";
+//        }
+//
+//        public function tuzhangFun(item:Object, column:AdvancedDataGridColumn):String {
+//            for each(var obj:Object in ToolUtil.tuzhangList) {
+//                if (obj.id == item.tuzhang) {
+//                    return obj.name;
+//                }
+//            }
+//            return "";
+//        }
+
+        private function bigImage(event:MouseEvent):void {
+//            if (event.currentTarget is Image) {
+//                var s:BigImage = PopUpManager.createPopUp(FlexGlobals.topLevelApplication as DisplayObject, BigImage, true) as BigImage;
+//                s.imgurl = event.currentTarget.source;
+//            }
+
+
+        }
+
+        private function filerTaxName(item:Object):Boolean {
+            if (filterInput.text.length==0||item.name.indexOf(filterInput.text) > -1) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        private function filterTax():void{
+            taxlist.refresh();
+        }
+        ]]>
+	</fx:Script>
+    <fx:Declarations>
+        <!-- 将非可视元素（例如服务、值对象）放在此处 -->
+        <!--  allowMultipleSelection="true"  -->
+    </fx:Declarations>
+    <s:HGroup gap="5" width="100%" height="100%">
+        <s:VGroup gap="4" width="250" height="100%" paddingTop="5" paddingLeft="5">
+            <s:HGroup gap="10" width="100%">
+                <s:TextInput prompt="过滤" width="90%" id="filterInput" change="filterTax()"></s:TextInput>
+            </s:HGroup>
+            <mx:DataGrid width="100%" height="100%" id="taxtemplateGrid" doubleClickEnabled="true"
+                         itemClick="selectTemplate()" editable="false"
+                         itemEditEnd="templateUpdate(event)" dataProvider="{taxlist}">
+                <mx:columns>
+                    <mx:DataGridColumn headerText="票据模板" dataField="name" editable="true"
+                                       sortable="false"></mx:DataGridColumn>
+                </mx:columns>
+            </mx:DataGrid>
+            <s:HGroup gap="10" width="100%">
+                <s:Button label="添加"  chromeColor="red" color="#ffffff" click="createRule()" height="30"></s:Button>
+                <s:Button label="删除" click="deleteRule()" height="30"></s:Button>
+            </s:HGroup>
+
+            <mx:DataGrid width="100%" height="300" id="taxtemplateRule" doubleClickEnabled="true"
+                         itemClick="selectRule()"  itemEditEnd="ruleUpdate(event)"
+                         dataProvider="{rulelist}">
+                <mx:columns>
+                    <mx:DataGridColumn headerText="字段名" dataField="fieldname" ></mx:DataGridColumn>
+                    <mx:DataGridColumn headerText="含义" dataField="name" ></mx:DataGridColumn>
+                    <mx:DataGridColumn headerText="类型" dataField="type" ></mx:DataGridColumn>
+                    <mx:DataGridColumn headerText="样式" dataField="style" ></mx:DataGridColumn>
+                    <mx:DataGridColumn headerText="内容" dataField="value" ></mx:DataGridColumn>
+                </mx:columns>
+            </mx:DataGrid>
+        </s:VGroup>
+        <s:BorderContainer width="100%" height="100%" id="taxTable" >
+
+        </s:BorderContainer>
+
+
+    </s:HGroup>
+</control:CBorderContainer>

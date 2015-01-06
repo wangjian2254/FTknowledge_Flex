@@ -71,7 +71,7 @@ public class CHTTPService extends HTTPService {
                 }
             } catch (error:Error) {
 
-                Alert.show("系统错误", "警告");
+                Alert.show("系统错误:\n"+error.toString(), "警告:"+this.url);
             }
 
 
